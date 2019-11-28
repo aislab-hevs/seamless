@@ -1,0 +1,26 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Server for maxim-gprt simulator",
+  "main": "server.js",
+  "dependencies": {
+    "bcrypt-nodejs": "0.0.3",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "knex": "^0.15.2",
+    "pg": "^7.12.1",
+    "redis": "^2.8.0",
+    "ws": "^7.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon -L --ext js server.js"
+  },
+  "author": "Giuseppe Albanese (peppe-a@live.it)",
+  "license": "ISC"
+}

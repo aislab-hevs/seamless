@@ -1,0 +1,64 @@
+version: "3.7"
+
+services:
+  # Backend API
+  server:
+    container_name: backend
+    build: ./backend
+    command: npm start
+    working_dir: /usr/src/backend
+    environment:
+      SERVER_PORT: ${SERVER_PORT}
+      POSTGRES_URI: postgres://maul:secret@postgres:5432/maxim-docker
+      REDIS_URI: redis://redis:6379
+    expose:
+      - ${SERVER_PORT}
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
+    volumes:
+      - ./backend:/usr/src/backend
+      - /usr/src/backend/node_modules/
+    depends_on: 
+      - postgres
+      - redis
+
+  client:
+    build: ./frontend
+    command: npm start
+    container_name: frontend
+    environment:
+      SERVER_HOST: ${SERVER_HOST}
+      SERVER_PORT: ${SERVER_PORT}
+      REACT_APP_PORT: ${REACT_APP_PORT}
+      REACT_APP_PROTOCOL: ${REACT_APP_PROTOCOL}
+      REACT_APP_SOCKET_PROTOCOL: ${REACT_APP_SOCKET_PROTOCOL}
+      CHOKIDAR_USEPOLLING: 'true'
+    expose:
+      - ${REACT_APP_PORT}
+    ports:
+      - ${REACT_APP_PORT}:${REACT_APP_PORT}
+    volumes:
+      - ./frontend:/usr/src/frontend
+      - /usr/src/frontend/node_modules/
+    command: npm start
+    depends_on:
+      - server
+
+  # Postgres
+  postgres:
+    build: ./db
+    environment:
+      POSTGRES_USER: maul
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: maxim-docker
+      POSTGRES_HOST: postgres
+    container_name: postgres
+    ports:
+      - "5432:5432"
+
+  # Redis
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
