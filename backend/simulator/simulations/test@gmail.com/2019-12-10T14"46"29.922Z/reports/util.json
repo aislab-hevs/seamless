@@ -1,0 +1,34 @@
+[
+    [
+        {
+            "action": "release",
+            "time": 0.0,
+            "utilization": 0.23076923076923078
+        },
+        {
+            "action": "task completed",
+            "time": 3.0,
+            "utilization": 0.23076923076923078
+        },
+        {
+            "action": "release",
+            "time": 13.0,
+            "utilization": 0.23076923076923078
+        },
+        {
+            "action": "task completed",
+            "time": 16.0,
+            "utilization": 0.23076923076923078
+        },
+        {
+            "action": "release",
+            "time": 26.0,
+            "utilization": 0.23076923076923078
+        },
+        {
+            "action": "task completed",
+            "time": 29.0,
+            "utilization": 0.23076923076923078
+        }
+    ]
+]

@@ -7,7 +7,8 @@ const SIM_PATH = process.cwd() + '/simulator/simulations';
 // seed-set -> modify to random seed!
 // DON'T ADD SPACES NOR FORMAT TEXT! (because .ini file needs to be written like this)
 const make_config = (config_json, agents_json) => {
-    let config = `[General]
+    let config = `# Name = ${config_json.sim_name || '-'}
+[General]
 network = net_0
 seed-set = ${new Date(config_json.date).getUTCMilliseconds()}
 net_0.timestamp = "${config_json.date}"
@@ -22,6 +23,8 @@ net_0.user = "${config_json.user}"
 *.ag[*].bidder_heuristic = ${config_json.bidder_h !== undefined ? config_json.bidder_h : -1}
 *.DF.bidder_heuristic = ${config_json.bidder_h !== undefined ? config_json.bidder_h : -1}
 *.DF.server_type = ${config_json.DF_server_type !== undefined ? config_json.DF_server_type : -1}
+*.DF.server_budget = ${config_json.DF_server_budget !== undefined ? config_json.DF_server_budget : -1}
+*.DF.server_period = ${config_json.DF_server_period !== undefined ? config_json.DF_server_period : -1}
 *.DF.msg_server_mode = ${config_json.DF_msg_server_mode}
 **.delay = uniform(${config_json.min_delay}ms, ${config_json.max_delay}ms)
 sim-time-limit = ${config_json.time}s
@@ -33,6 +36,8 @@ cmdenv-output-file = ./ev_log
     if (config_json.apply_for_all) {
         config = config.concat(`*.ag[*].sched_type = ${config_json.sched_type}
 *.ag[*].server_type = ${config_json.server_type !== undefined ? config_json.server_type : -1}
+*.ag[*].server_budget = ${config_json.server_budget !== undefined ? config_json.server_budget : -1}
+*.ag[*].server_period = ${config_json.server_period !== undefined ? config_json.server_period : -1}
 *.ag[*].msg_server_mode = ${config_json.msg_server_mode}
 *.ag[*].quantum = ${config_json.quantum !== undefined ? config_json.quantum : -1}
 `)
@@ -40,7 +45,9 @@ cmdenv-output-file = ./ev_log
         Object.keys(agents_json).forEach(id => {
             config = config.concat(
                 `*.ag[${id}].sched_type = ${agents_json[id].sched_type}
-*.ag[${id}].server_type = ${config_json.server_type !== undefined ? config_json.server_type : -1}
+*.ag[${id}].server_type = ${agents_json[id].server_type !== undefined ? agents_json[id].server_type : -1}
+*.ag[${id}].server_budget = ${agents_json[id].server_budget !== undefined ? agents_json[id].server_budget : -1}
+*.ag[${id}].server_period = ${agents_json[id].server_period !== undefined ? agents_json[id].server_period : -1}
 *.ag[${id}].msg_server_mode = ${agents_json[id].msg_server_mode}
 *.ag[${id}].quantum = ${agents_json[id].quantum !== undefined ? agents_json[id].quantum : -1}
 `)
@@ -170,12 +177,15 @@ const parseLocalRespTime = resp_time => {
     if (resp_time) {
         for (let i = 0; i < resp_time.length; i++) {
             let times = [];
-            for (let entry of resp_time[i]) {
-                times.push({
-                    time: parseFloat(entry.finishTime.toFixed(2)),
-                    [`t_${entry.taskId}`]: parseFloat(entry.responseTime.toFixed(2))
-                });
+            if (resp_time[i] !== null) {
+                for (let entry of resp_time[i]) {
+                    times.push({
+                        time: parseFloat(entry.finishTime.toFixed(2)),
+                        [`t_${entry.taskId}`]: parseFloat(entry.responseTime.toFixed(2))
+                    });
+                }
             }
+
             parsed[i] = times.sort((a, b) => (a.time > b.time) ? 1 : ((b.time > a.time) ? -1 : 0));
         }
     }
@@ -203,17 +213,19 @@ const parseLocalLateness = lateness => {
 }
 
 const parseLocalUtil = util => {
-    return util.map(entries => {
-        return entries.map(entry => {
-            return { ...entry, utilization: parseFloat(entry.utilization.toFixed(2)) }
+    if (util) {
+        return util.map(entries => {
+            if (entries !== null) return entries.map(entry => {
+                return { ...entry, utilization: parseFloat(entry.utilization.toFixed(2)) }
+            })
         })
-    })
+    }
 }
 
 const parseLocalPotUtil = pot_util => {
     if (pot_util) {
         return pot_util.map(entries => {
-            return entries.map(entry => {
+            if (entries !== null) return entries.map(entry => {
                 return { ...entry, [`potential utilization`]: parseFloat(entry.u_pot.toFixed(2)) }
             })
         })
@@ -289,14 +301,35 @@ const parseGlobalDdlMiss = ddl_miss => {
     if (ddl_miss) {
         let parsed = {};
         for (let entry of ddl_miss) {
-            if (parsed[entry.id]) parsed[entry.id]++;
-            else parsed[entry.id] = 1;
+            if (!parsed[entry.executor]) parsed[entry.executor] = {};
+            else if (!parsed[entry.executor][entry.id]) parsed[entry.executor][entry.id] = 1;
+            else parsed[entry.executor][entry.id]++;
         }
-        return Object.keys(parsed).map(key => {
-            return { 'id': `t_${key}`, ddl_miss: parsed[key] }
-        });
+        return parsed;
+        // return Object.keys(parsed).map(key => {
+        //     return { 'id': `t_${key}`, ddl_miss: parsed[key] }
+        // });
     } else return null
 }
+
+const parseLocalDMR = (ddl_miss, ddl_checks) => {
+    let ddl_miss_parsed = null;
+    if (ddl_miss) {
+        ddl_miss_parsed = parseGlobalDdlMiss(ddl_miss);
+    }
+    if (ddl_checks && ddl_miss_parsed) {
+        let parsed = {};
+        for (let [agent, values] of Object.entries(ddl_miss_parsed)) {
+            for (let [task, miss] of Object.entries(values)) {
+                if (!parsed[agent]) parsed[agent] = [];
+                let check = ddl_checks[agent][task];
+                parsed[agent].push({ 'id': `t_${task}`, dmr: Math.round((miss / check) * 100) / 100, miss: miss, checks: check });
+            }
+        }
+        return parsed;
+    } else return null
+}
+
 
 const parseLog = log => {
     const lines = log.split('\n');
@@ -406,19 +439,18 @@ const mergeUtil = (util, pot_util) => {
 
 const parseReports = reports => {
     return {
-        ddl_miss: reports.ddl_miss,
-        lateness: reports.latentess,
         resp_per_task: reports.resp_per_task,
         util: parseLocalUtil(reports.util),
         stats: reports.stats,
         local_resp_time: parseLocalRespTime(reports.resp_time),
         local_lateness: parseLocalLateness(reports.lateness),
         local_pot_util: parseLocalPotUtil(reports.pot_util),
+        local_dmr: parseLocalDMR(reports.ddl_miss, reports.ddl_checks),
         global_acc_ratio: parseGlobalAccRatio(reports.acc_ratio),
         global_resp_time: reports.resp_time,
         global_util: parseGlobalUtil(reports.util),
         global_dmr: parseGlobalDMR(reports.stats),
-        global_ddl_miss: parseGlobalDdlMiss(reports.ddl_miss),
+        // global_ddl_miss: parseGlobalDdlMiss(reports.ddl_miss),
         merged_util: mergeUtil(reports.util, reports.pot_util)
     }
 }

@@ -28,12 +28,24 @@ const useStyles = makeStyles(theme => ({
 export default function ConfigForm(props) {
   const classes = useStyles();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const { handleChange, handleSubmit, values, error } = props;
+  const { handleChange, handleSubmit, values, setValues, error } = props;
 
   const initValue = (param, value) => {
     values[param] = values[param] !== undefined
       ? values[param]
       : value;
+  }
+
+  const getNegProtocolOptions = () => {
+    if (props.rt_agents.length === Number(values.agents_n) ||
+      (values.apply_for_all && values.sched_type === constants.SchedTypeEnum['EDF']))
+      return constants.NegTypeEnum;
+    else return {
+      'CNET': 0,
+      'CNCP': 2,
+      'EN': 3,
+      'DU': 4,
+    };
   }
 
   useEffect(() => {
@@ -42,6 +54,7 @@ export default function ConfigForm(props) {
     initValue('use_neg', false);
     initValue('DF_msg_server_mode', false);
     initValue('msg_server_mode', false);
+    initValue('DF_sched_type', 2)
     // initValue('DF_server_type', -1);
     // initValue('server_type', -1);
     // initValue('neg_type', -1); // moved in backend parser
@@ -79,22 +92,19 @@ export default function ConfigForm(props) {
                 />
               </MuiPickersUtilsProvider>
               <TextField
-                id="agents_n"
-                name="agents_n"
+                id="sim_name"
+                name="sim_name"
                 className={classes.spaced}
-                label="Number of agents"
-                placeholder="1"
+                label="Name"
                 margin="normal"
                 fullWidth
                 onChange={handleChange('value')}
-                value={values.agents_n || ''}
-                error={error['Number of agents'] || values.agents_n < 1}
-                helperText={values.agents_n < 1 ? 'Must be greater than 0' : undefined}
+                value={values.sim_name || ''}
+                // error={error['Number of agents'] || values.agents_n < 1}
+                // helperText={values.agents_n < 1 ? 'Must be greater than 0' : undefined}
                 InputProps={{
                   inputProps: {
-                    type: 'number',
-                    min: 1,
-                    max: 100,
+                    type: 'text',
                   }
                 }}
               />
@@ -163,18 +173,42 @@ export default function ConfigForm(props) {
           <Grid item xs={12} sm={6} md={4}>
             <FormLabel component="legend">Agents Options</FormLabel>
             <FormGroup>
+            <TextField
+                id="agents_n"
+                name="agents_n"
+                className={classes.spaced}
+                label="Number of agents"
+                placeholder="1"
+                margin="normal"
+                fullWidth
+                onChange={handleChange('value')}
+                value={values.agents_n || ''}
+                error={error['Number of agents'] || values.agents_n < 1}
+                helperText={values.agents_n < 1 ? 'Must be greater than 0' : undefined}
+                InputProps={{
+                  inputProps: {
+                    type: 'number',
+                    min: 1,
+                    max: 100,
+                  }
+                }}
+              />
               <CustomSelect
                 shrinked={values.DF_sched_type !== undefined ? 1 : 0} // workaround to error 'received value for non-boolean attribute
                 className={classes.spaced}
                 label='DF Scheduling Algorithm'
                 name='DF_sched_type'
-                onChange={handleChange('value')}
+                onChange={(e) => {
+                  handleChange('value')(e);
+                  setValues(values => ({ ...values, DF_msg_server_mode: false }));
+                }
+                }
                 value={values.DF_sched_type}
                 error={error['DF Scheduling Algorithm']}
                 helpertext={error.DF_sched_type ? 'Required' : undefined}
                 options={constants.SchedTypeEnum}
               />
-              {values.DF_sched_type === 1 &&
+              {values.DF_sched_type === constants.SchedTypeEnum['RR'] &&
                 <TextField
                   id="DF_quantum"
                   name="DF_quantum"
@@ -199,6 +233,7 @@ export default function ConfigForm(props) {
                 className={classes.spaced}
                 control={
                   <Switch
+                    disabled={values.DF_sched_type !== constants.SchedTypeEnum['EDF']}
                     checked={values.DF_msg_server_mode || false}
                     onChange={handleChange('checked')}
                     name='DF_msg_server_mode'
@@ -208,17 +243,62 @@ export default function ConfigForm(props) {
                 }
                 label="DF Message server mode"
               />
-              <CustomSelect
-                className={classes.spaced}
-                label='DF Message server type'
-                name='DF_server_type'
-                onChange={handleChange('value')}
-                value={values.DF_server_type}
-                options={constants.ServerTypeEnum}
-                disabled={!values.DF_msg_server_mode}
-                error={error['DF Message server type'] || error.DF_server_type}
-                // helpertext={error.DF_server_type ? 'Required' : undefined}
-              />
+              {values.DF_msg_server_mode &&
+                <>
+                  <CustomSelect
+                    shrinked={values.DF_server_type !== undefined ? 1 : 0}
+                    className={classes.spaced}
+                    label='DF Message server type'
+                    name='DF_server_type'
+                    onChange={handleChange('value')}
+                    value={values.DF_server_type}
+                    options={constants.ServerTypeEnum}
+                    disabled={!values.DF_msg_server_mode || values.DF_sched_type !== constants.SchedTypeEnum['EDF']}
+                    error={error['DF Message server type'] || error.DF_server_type}
+                  // helpertext={error.DF_server_type ? 'Required' : undefined}
+                  />
+                  <TextField
+                    id="DF_server_budget"
+                    name="DF_server_budget"
+                    className={classes.spaced}
+                    label="Budget"
+                    placeholder="1"
+                    margin="normal"
+                    fullWidth
+                    onChange={handleChange('value')}
+                    value={values.DF_server_budget || ''}
+                    error={error['DF Message server budget'] || Number(values.DF_server_budget) < 0 || (Number(values.DF_server_budget) > Number(values.DF_server_period))}
+                    helperText={((Number(values.DF_server_budget) < 0) || (Number(values.DF_server_budget) > Number(values.DF_server_period))) ? 'Must be less than period and greater than 0' : undefined}
+                    InputProps={{
+                      inputProps: {
+                        type: 'number',
+                        min: 1,
+                        max: 100,
+                      }
+                    }}
+                  />
+                  <TextField
+                    id="DF_server_period"
+                    name="DF_server_period"
+                    className={classes.spaced}
+                    label="Period"
+                    placeholder="1"
+                    margin="normal"
+                    fullWidth
+                    onChange={handleChange('value')}
+                    value={values.DF_server_period || ''}
+                    error={error['DF Message server period'] || Number(values.DF_server_period) < 0 || (Number(values.DF_server_budget) > Number(values.DF_server_period))}
+                    helperText={((Number(values.DF_server_period) < 0) || (Number(values.DF_server_budget) > Number(values.DF_server_period))) ? 'Must be greater than budget and greater than 0' : undefined}
+                    InputProps={{
+                      inputProps: {
+                        type: 'number',
+                        min: 1,
+                        max: 100,
+                      }
+                    }}
+                  />
+                </>
+              }
               <FormControlLabel
                 className={classes.spaced}
                 control={
@@ -238,13 +318,17 @@ export default function ConfigForm(props) {
                     className={classes.spaced}
                     label='Scheduling Algorithm'
                     name='sched_type'
-                    onChange={handleChange('value')}
+                    onChange={(e) => {
+                      handleChange('value')(e);
+                      setValues(values => ({ ...values, msg_server_mode: false }));
+                    }
+                    }
                     value={values.sched_type}
                     error={error['Scheduling Algorithm']}
                     // helpertext={error.sched_type ? 'Required' : undefined}
                     options={constants.SchedTypeEnum}
                   />
-                  {values.sched_type === 1 &&
+                  {values.sched_type === constants.SchedTypeEnum['RR'] &&
                     <TextField
                       id="quantum"
                       name="quantum"
@@ -269,6 +353,7 @@ export default function ConfigForm(props) {
                     className={classes.spaced}
                     control={
                       <Switch
+                        disabled={values.sched_type !== constants.SchedTypeEnum['EDF']}
                         checked={values.msg_server_mode || false}
                         onChange={handleChange('checked')}
                         name='msg_server_mode'
@@ -278,17 +363,61 @@ export default function ConfigForm(props) {
                     }
                     label="Message server mode"
                   />
-                  <CustomSelect
-                    className={classes.spaced}
-                    label='Message server type'
-                    name='server_type'
-                    onChange={handleChange('value')}
-                    value={values.server_type}
-                    error={error['Message server type']}
-                    // helpertext={error.server_type ? 'Required' : undefined}
-                    options={constants.ServerTypeEnum}
-                    disabled={!values.msg_server_mode}
-                  />
+                  {values.msg_server_mode &&
+                    <>
+                      <CustomSelect
+                        className={classes.spaced}
+                        label='Message server type'
+                        name='server_type'
+                        onChange={handleChange('value')}
+                        value={values.server_type}
+                        error={error['Message server type']}
+                        // helpertext={error.server_type ? 'Required' : undefined}
+                        options={constants.ServerTypeEnum}
+                        disabled={!values.msg_server_mode || values.sched_type !== constants.SchedTypeEnum['EDF']}
+                      />
+                      <TextField
+                        id="server_budget"
+                        name="server_budget"
+                        className={classes.spaced}
+                        label="Budget"
+                        placeholder="1"
+                        margin="normal"
+                        fullWidth
+                        onChange={handleChange('value')}
+                        value={values.server_budget || ''}
+                        error={error['Message server budget'] || Number(values.server_budget) < 0 || (Number(values.server_budget) > Number(values.server_period))}
+                        helperText={((Number(values.server_budget) < 0) || Number(values.server_budget) > Number(values.server_period)) ? 'Must be less than period and greater than 0' : undefined}
+                        InputProps={{
+                          inputProps: {
+                            type: 'number',
+                            min: 1,
+                            max: 100,
+                          }
+                        }}
+                      />
+                      <TextField
+                        id="server_period"
+                        name="server_period"
+                        className={classes.spaced}
+                        label="Period"
+                        placeholder="1"
+                        margin="normal"
+                        fullWidth
+                        onChange={handleChange('value')}
+                        value={values.server_period || ''}
+                        error={error['Message server period'] || Number(values.server_period) < 0 || (Number(values.server_budget) > Number(values.server_period))}
+                        helperText={((Number(values.server_period) < 0) || (Number(values.server_budget) > Number(values.server_period))) ? 'Must be greater than budget and greater than 0' : undefined}
+                        InputProps={{
+                          inputProps: {
+                            type: 'number',
+                            min: 1,
+                            max: 100,
+                          }
+                        }}
+                      />
+                    </>
+                  }
                 </>}
             </FormGroup>
           </Grid>
@@ -318,7 +447,7 @@ export default function ConfigForm(props) {
                     value={values.neg_type}
                     error={error['Negotiation Protocol']}
                     // helpertext={hasError && values.use_neg && values.neg_type === undefined ? 'Required' : undefined}
-                    options={constants.NegTypeEnum}
+                    options={getNegProtocolOptions()}
                   />
                   <CustomSelect
                     className={classes.spaced}
@@ -326,7 +455,7 @@ export default function ConfigForm(props) {
                     name='contr_h'
                     onChange={handleChange('value')}
                     value={values.contr_h}
-                    error={error['Contractor Heuristic'] }
+                    error={error['Contractor Heuristic']}
                     // helpertext={hasError && values.use_neg && values.contr_h === undefined ? 'Required' : undefined}
                     options={constants.ContractorPoliciesEnum}
                   />

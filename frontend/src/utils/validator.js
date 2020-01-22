@@ -9,6 +9,8 @@ const checkConfigForm = (config, error, setError) => {
     }
     if (config.DF_msg_server_mode) {
         error['DF Message server type'] = config.DF_server_type === undefined;
+        error['DF Message server budget'] = config.DF_server_budget === undefined ||  (Number(config.DF_server_budget) > Number(config.DF_server_period)) || Number(config.DF_server_budget) <= 0;
+        error['DF Message server period'] = config.DF_server_period === undefined ||  (Number(config.DF_server_budget) > Number(config.DF_server_period)) || Number(config.DF_server_period) <= 0;
     }
     if (config.apply_for_all) {
         error['Scheduling Algorithm'] = config.sched_type === undefined;
@@ -17,6 +19,8 @@ const checkConfigForm = (config, error, setError) => {
         }
         if (config.msg_server_mode) {
             error['Message server type'] = config.server_type === undefined
+            error['Message server budget'] = config.server_budget === undefined ||  (Number(config.server_budget) > Number(config.server_period)) || Number(config.server_budget) <= 0;
+            error['Message server period'] = config.server_period === undefined ||  (Number(config.server_budget) > Number(config.server_period)) || Number(config.server_period) <= 0;
         }
     }
     if (config.use_neg) {
@@ -33,6 +37,8 @@ const checkAgentsForm = (agents, error, setError, ignored) => {
         error[`Agent ${Number(id) + 1} Scheduling Algorithm`] = ignored ? false : agent.sched_type === undefined;
         if (agent.msg_server_mode) {
             error[`Agent ${Number(id) + 1} Message server type`] = ignored ? false : agent.server_type === undefined;
+            error[`Agent ${Number(id) + 1} Message server budget`] = ignored ? false : agent.server_budget === undefined || (Number(agent.server_budget) > Number(agent.server_period)) || Number(agent.server_budget) <= 0;
+            error[`Agent ${Number(id) + 1} Message server period`] = ignored ? false : agent.server_period === undefined || (Number(agent.server_budget) > Number(agent.server_period)) || Number(agent.server_period) <= 0;
         }
         if (agent.sched_type === 1) {
             error[`Agent ${Number(id) + 1} Quantum`] = ignored ? false : agent.quantum === '' || Number(agent.quantum) < 0
@@ -45,8 +51,9 @@ const checkServersForm = (servers, error, setError, ignored) => {
     for (let [id, server] of Object.entries(servers)) {
         error[`Server ${Number(id) + 1} Agent Id`] = ignored ? false : server.agent_id === undefined;
         error[`Server ${Number(id) + 1} Id`] = ignored ? false : server.server_id === undefined;
-        error[`Server ${Number(id) + 1} Bandwidth`] = ignored ? false : server.bandwidth === undefined || server.bandwidth === '' || Number(server.bandwidth) > 1
-        error[`Server ${Number(id) + 1} Budget`] = ignored ? false : server.budget === undefined || server.budget === '' || Number(server.budget) < 1
+        // error[`Server ${Number(id) + 1} Bandwidth`] = ignored ? false : server.bandwidth === undefined || server.bandwidth === '' || Number(server.bandwidth) > 1
+        error[`Server ${Number(id) + 1} Period`] = ignored ? false : server.period === undefined || server.period === '' || Number(server.period) < 1 || Number(server.period) < Number(server.budget)
+        error[`Server ${Number(id) + 1} Budget`] = ignored ? false : server.budget === undefined || server.budget === '' || Number(server.budget) < 1 || Number(server.period) < Number(server.budget)
         error[`Server ${Number(id) + 1} Type`] = ignored ? false : server.type === undefined;
     }
     setError(error);
@@ -61,7 +68,7 @@ const checkTasksForm = (knowledge, error, setError) => {
         error[`Task ${Number(id) + 1} Residual Computation Time`] = task.residualComputationTime === undefined || task.residualComputationTime === '' || Number(task.residualComputationTime) > Number(task.computationTime);
         error[`Task ${Number(id) + 1} Arrival Time`] = task.arrivalTime === undefined || task.arrivalTime === '' || (Number(task.arrivalTime) < 0);
         error[`Task ${Number(id) + 1} Period`] = task.period === undefined || task.period === '' || Number(task.period) < Number(task.computationTime);
-        error[`Task ${Number(id) + 1} Relative Deadline`] = task.relativeDeadline === undefined || task.relativeDeadline === '' || Number(task.relativeDeadline) < Number(task.period);
+        error[`Task ${Number(id) + 1} Relative Deadline`] = task.relativeDeadline === undefined || task.relativeDeadline === '' || Number(task.relativeDeadline) < Number(task.computationTime);
         if (Number(task.n_exec) !== -1) {
             error[`Task ${Number(id) + 1} Number of executions`] = task.n_exec === undefined || task.n_exec === '' || (Number(task.n_exec) < 1);
         }
@@ -81,7 +88,7 @@ const checkNeedsForm = (needs, error, setError, ignored) => {
         error[`Need ${Number(id) + 1} Agent Id`] = ignored ? false : need.agent_id === undefined;
         error[`Need ${Number(id) + 1} Release time`] = ignored ? false : need.releaseTime === undefined || need.releaseTime === '' || Number(need.releaseTime) < 0;
         error[`Need ${Number(id) + 1} Needed Task Release Time`] = ignored ? false : need.neededTaskRelease === undefined || need.neededTaskRelease === '' || Number(need.neededTaskRelease) < Number(need.releaseTime);
-        error[`Need ${Number(id) + 1} Needed Task Deadline`] = ignored ? false : need.neededTaskDeadline === '' || need.neededTaskDeadline === undefined;
+        error[`Need ${Number(id) + 1} Needed Task Deadline`] = ignored ? false : need.neededTaskDeadline === '' || need.neededTaskDeadline === undefined || Number(need.neededTaskDeadline) < Number(need.neededTaskRelease);
         error[`Need ${Number(id) + 1} Needed Task Executions`] = ignored ? false : need.neededTaskNExec === undefined || need.neededTaskNExec === '' || (Number(need.neededTaskNExec) !== -1 && Number(need.neededTaskNExec) < 0)
         error[`Need ${Number(id) + 1} Minimum Task Period`] = ignored ? false : Number(need.neededTaskTMin) < 0;
         error[`Need ${Number(id) + 1} Maximum Task Period`] = ignored ? false : Number(need.neededTaskTMax) < Number(need.neededTaskTMin);

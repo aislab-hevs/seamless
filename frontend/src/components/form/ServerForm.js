@@ -32,7 +32,7 @@ const MenuProps = {
 };
 
 export default function ServerForm(props) {
-  const { getAgentsMenuItems, setServers, servers, serverIndex, error } = props;
+  const { rt_agents, agents_n, setServers, servers, serverIndex, error } = props;
   const classes = useStyles();
 
   // Dark magic here
@@ -47,6 +47,17 @@ export default function ServerForm(props) {
       }
     }));
   };
+
+  const getRTAgentsMenuItems = () => {
+    let options = [];
+    for (let ag of rt_agents) {
+      options.push(<MenuItem
+        key={ag}
+        value={`${ag}`}>{ag}
+      </MenuItem>)
+    }
+    return options;
+  }
 
   return (
     <div className={classes.root}>
@@ -66,8 +77,8 @@ export default function ServerForm(props) {
                 }}
                 MenuProps={MenuProps}
               >
-                <MenuItem value={"-1"}>All</MenuItem>
-                {getAgentsMenuItems()}
+                {rt_agents.length === Number(agents_n) && <MenuItem value={"-1"}>All</MenuItem>}
+                {getRTAgentsMenuItems()}
               </Select>
             </FormControl>
             <TextField
@@ -90,30 +101,30 @@ export default function ServerForm(props) {
                 }
               }}
             />
-            <TextField
-              id="bandwidth"
-              name="bandwidth"
-              className={classes.spaced}
-              label="Bandwidth"
-              placeholder="1"
-              margin="normal"
-              fullWidth
-              onChange={handleChange(serverIndex)}
-              value={(servers[serverIndex] && servers[serverIndex].bandwidth) || ''}
-              error={error[`Server ${serverIndex + 1} Bandwidth`] || (servers[serverIndex] && servers[serverIndex].bandwidth > 1)}
-              helperText={'Value between 0 and 1'}
-              InputProps={{
-                inputProps: {
-                  type: 'number',
-                  min: 0,
-                  max: 1,
-                }
-              }}
-            />
           </FormGroup>
         </Grid>
         <Grid item xs={12} sm={6}>
           <FormGroup>
+            <TextField
+              id="period"
+              name="period"
+              className={classes.spaced}
+              label="Period"
+              placeholder="1"
+              margin="normal"
+              fullWidth
+              onChange={handleChange(serverIndex)}
+              value={(servers[serverIndex] && servers[serverIndex].period) || ''}
+              error={error[`Server ${serverIndex + 1} Period`] || (servers[serverIndex] && (Number(servers[serverIndex].period) < 1) || (Number(servers[serverIndex].period) < Number(servers[serverIndex].budget)))}
+              helperText={(servers[serverIndex] && ((Number(servers[serverIndex].period) < 1) || (Number(servers[serverIndex].period) < Number(servers[serverIndex].budget)))) ? 'Must be greater than budget and greater than 1' : undefined}
+              InputProps={{
+                inputProps: {
+                  type: 'number',
+                  min: 1,
+                  max: 10000,
+                }
+              }}
+            />
             <TextField
               id="budget"
               name="budget"
@@ -124,8 +135,8 @@ export default function ServerForm(props) {
               fullWidth
               onChange={handleChange(serverIndex)}
               value={(servers[serverIndex] && servers[serverIndex].budget) || ''}
-              error={error[`Server ${serverIndex + 1} Budget`] || (servers[serverIndex] && servers[serverIndex].budget < 1)}
-              helperText={(servers[serverIndex] && servers[serverIndex].budget < 1) ? 'Must be greater than or equal to 1' : undefined}
+              error={error[`Server ${serverIndex + 1} Budget`] || (servers[serverIndex] && (Number(servers[serverIndex].budget) < 1) || (Number(servers[serverIndex].period) < Number(servers[serverIndex].budget)))}
+              helperText={(servers[serverIndex] && ((Number(servers[serverIndex].budget) < 1) || (Number(servers[serverIndex].period) < Number(servers[serverIndex].budget)))) ? 'Must be less than period and greater than 1' : undefined}
               InputProps={{
                 inputProps: {
                   type: 'number',

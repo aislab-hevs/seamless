@@ -1,19 +1,16 @@
 import React from 'react'
-import Typography from '../../components/Typography';
-import {
-  Box
-} from '@material-ui/core';
+import MDWrapper from '../../components/MDWrapper';
+import research from '../../assets/research.md';
 
-function Research(props) {
+const sections = [
+  { name: 'Summary', href: 'Summary', level: 1 },
+  { name: 'Simulations', href: 'Simulations', level: 1 },
+  { name: 'Tasksets', href: 'Tasksets', level: 1 },
+  { name: 'Needs', href: 'Needs', level: 1 }
+]
+
+export default function Howto() {
   return (
-    <>
-      <Box pb={2} pt={4}>
-        <Typography variant='h2' className={props.classes.title}>
-          Research
-        </Typography>
-      </Box>
-    </>
+    <MDWrapper title='Research' file={research} />
   )
 }
-
-export default Research;

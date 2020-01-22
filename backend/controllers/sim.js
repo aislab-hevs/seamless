@@ -2,13 +2,14 @@ const fs = require('fs');
 const parser = require('../utils/parser');
 const { exec } = require('child_process'); //NB see 'spawn' to have more control on the execution of commands
 const AGENT_PATH = process.cwd() + '/simulator/agent_gprt/';
-const REPORTS = ["ddl_miss.json", "lateness.json", "resp_per_task.json", "resp_time.json", "stats.json", "util.json", "pot_util.json", "acc_ratio.json"];
+const REPORTS = ["ddl_checks.json", "ddl_miss.json", "lateness.json", "resp_per_task.json", "resp_time.json", "stats.json", "util.json", "pot_util.json", "acc_ratio.json"];
 const INPUTS = ["agents.json", "knowledge.json", "needs.json", "servers.json", "taskset.json"];
 const CONFIG = "net_config.ini";
+const ARCHIVE_NAME = "simulation.tar.gz"
 
 const runSimulation = async (req, res) => {
+    const { config, inputs } = req.body;
     try {
-        const { config, inputs } = req.body;
         await parser.initializeFiles(config, inputs);
         let config_path = `../simulations/${config.user}/${config.date}/${parser.CONF_NAME}`
         // need to be in the same folder of the sim to run properly -> cd
@@ -34,6 +35,15 @@ const runSimulation = async (req, res) => {
         return res.status(200).json(`Simulation completed!`)
     } catch (error) {
         console.log(error);
+        // delete folder if simulation failed
+        await new Promise((resolve, reject) => {
+            exec(`rm -rf ${parser.SIM_PATH}/${config.user}/${config.date}`, (error, stdout, stderr) => {
+                if (error !== null) {
+                    reject(error);
+                }
+                resolve(console.log('Folder deleted due to failing!'));
+            });
+        });
         return res.status(500).json(`Simulation failed - ` + error);
     }
 }
@@ -105,15 +115,37 @@ const getInputs = async (req, res) => {
     }
 }
 
-const getSimulations = (req, res) => {
+const getSimulations = async (req, res) => {
     const { user } = req.params;
     try {
-        exec(`ls ${parser.SIM_PATH}/${user}`, (error, stdout, stderr) => {
-            if (error !== null) {
-                console.log(error);
-            }
-            res.status(200).json(stdout.split('\n').filter(el => el !== ''));
+        let simulations = await new Promise((resolve, reject) => {
+            exec(`ls ${parser.SIM_PATH}/${user}`, (error, stdout, stderr) => {
+                if (error !== null) {
+                    reject(error);
+                }
+                resolve(stdout.split('\n').filter(el => el !== ''));
+            });
         });
+        let parsed = await simulations.map(async date => {
+            return await new Promise((resolve, reject) => {
+                fs.readFile(`${parser.SIM_PATH}/${user}/${date}/${parser.CONF_NAME}`,
+                    (err, data) => {
+                        if (err) {
+                            if (err.code === 'ENOENT') {
+                                console.error(`${date} does not exist`);
+                                reject(err);
+                            };
+                            reject(err);
+                        }
+                        else {
+                            let name = parser.toConfigObject(String(data))['# Name'] || '-';
+                            resolve({ date, name });
+                        }
+                    }
+                )
+            });
+        });
+        Promise.all(parsed).then(data => res.status(200).json(data));
     } catch (err) {
         console.log(err);
         res.status(404).json("File not found");
@@ -152,7 +184,7 @@ const getLog = async (req, res) => {
                 (err, data) => {
                     if (err) {
                         if (err.code === 'ENOENT') {
-                            console.error(`${file} does not exist`);
+                            console.error(`awk_log file does not exist`);
                             reject(err);
                         };
                         reject(err);
@@ -168,12 +200,41 @@ const getLog = async (req, res) => {
     }
 }
 
+const getSimulationFiles = async (req, res) => {
+    const { user, date } = req.params;
+    try {
+        // create file only if it does not exist
+        try {
+            await fs.promises.access(`${parser.SIM_PATH}/${user}/${date}/${ARCHIVE_NAME}`);
+            // The check succeeded
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                // create file
+                await new Promise((resolve, reject) => {
+                    exec(`cd ${parser.SIM_PATH}/${user}/${date} && tar -czvf ${ARCHIVE_NAME} *`, (error, stdout, stderr) => {
+                        if (error !== null) {
+                            reject(error);
+                        }
+                        resolve(console.log('Archive created!'))
+                    });
+                });
+            }
+        }
+        // send file
+        const file = `${parser.SIM_PATH}/${user}/${date}/${ARCHIVE_NAME}`;
+        res.download(file);
+    } catch (err) {
+        console.log(err);
+        res.status(404).json("File not found");
+    }
+}
+
 const deleteSimulations = async (req, res) => {
     const { user } = req.params;
     const { simulations } = req.body
     try {
         for (let date of simulations) {
-            exec(`rm -rf ${parser.SIM_PATH}/${user}/${date}`, (error, stdout, stderr) => {
+            await exec(`rm -rf ${parser.SIM_PATH}/${user}/${date}`, (error, stdout, stderr) => {
                 if (error !== null) {
                     console.log(error);
                 }
@@ -194,5 +255,6 @@ module.exports = {
     getSimulations,
     getNedConfig,
     getLog,
+    getSimulationFiles,
     deleteSimulations
 }

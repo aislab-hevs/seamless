@@ -152,6 +152,22 @@ const getLog = async (user, date, token) => {
     }
 }
 
+const getSimulationFiles = async (user, date, token) => {
+    try {
+        let res = await fetch(`${URL}/download/${user}/${date}`, {
+            method: 'get',
+            headers: {
+                'Content-Type': 'application/gzip',
+                'Authorization': token
+            },
+        });
+        return res = await res.blob();
+
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 const runSimulation = async (config, inputs, token) => {
     try {
         let res = await fetch(`${URL}/simulation`, {
@@ -200,6 +216,7 @@ export {
     getInputs,
     getConfig,
     getLog,
+    getSimulationFiles,
     runSimulation,
     deleteSimulations
 }

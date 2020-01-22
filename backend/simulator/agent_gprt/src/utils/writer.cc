@@ -23,6 +23,7 @@ const string POT_UTIL = "pot_util.json";
 const string RESP_TIME = "/resp_time.json";
 const string LATENESS = "/lateness.json";
 const string DMR = "/ddl_miss.json";
+const string DDL_CHECKS = "/ddl_checks.json";
 const string RESP_PER_TASK = "/resp_per_task.json";
 const string ACC_RATIO = "/acc_ratio.json";
 
@@ -34,6 +35,7 @@ json resp_time_per_task_json;
 json util_json;
 json pot_util_json;
 json acc_ratio_json;
+json ddl_checks_json;
 
 // *****************************************************************************
 // *******                            JSON                               *******
@@ -114,7 +116,8 @@ void write_stats_json_report(int agent_id, int ddl_checks, int ddl_miss,
     o << std::setw(4) << stats_json << std::endl;
 }
 
-void write_acceptance_ratio(int agent_id, double ratio, string timestamp, string user){
+void write_acceptance_ratio(int agent_id, double ratio, string timestamp,
+        string user) {
     acc_ratio_json[agent_id] = {
         {   "acc_ratio", ratio},
     };
@@ -123,6 +126,15 @@ void write_acceptance_ratio(int agent_id, double ratio, string timestamp, string
     path report_dir("../simulations/" + user + "/" + timestamp + REPORT_PATH);
     std::ofstream o(report_dir.string() + ACC_RATIO);
     o << std::setw(4) << acc_ratio_json << std::endl;
+}
+
+void write_ddl_checks(int task_id, int agent_id) {
+    if (ddl_checks_json[agent_id][task_id].empty())
+        ddl_checks_json[agent_id][task_id] = 1;
+    else {
+        int new_check = ddl_checks_json[agent_id][task_id];
+        ddl_checks_json[agent_id][task_id] = new_check + 1;
+    }
 }
 
 void save_util_json(string timestamp, string user) {
@@ -158,6 +170,13 @@ void save_ddl_json(string timestamp, string user) {
     path report_dir("../simulations/" + user + "/" + timestamp + REPORT_PATH);
     std::ofstream o(report_dir.string() + DMR);
     o << std::setw(4) << ddl_json << std::endl;
+}
+
+void save_ddl_checks_json(string timestamp, string user) {
+    check_reports_dir(timestamp, user);
+    path report_dir("../simulations/" + user + "/" + timestamp + REPORT_PATH);
+    std::ofstream o(report_dir.string() + DDL_CHECKS);
+    o << std::setw(4) << ddl_checks_json << std::endl;
 }
 
 void save_resp_per_task_json(string timestamp, string user) {

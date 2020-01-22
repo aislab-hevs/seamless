@@ -66,20 +66,22 @@ void ServerHandler::read_servers_from_json(string path, int ag_id) {
         string id = to_string(ag_id);
         for (const auto& server : servers[id]) {
             int server_id = stoi(server["server_id"].get<string>());
-            double bandwidth = stod(server["bandwidth"].get<string>());
+//          double bandwidth = stod(server["bandwidth"].get<string>());
+            double period = stod(server["period"].get<string>());
             double budget = stod(server["budget"].get<string>());
             ServerType type = (ServerType) (server["type"]);
 
-            add_server(new Server(server_id, bandwidth, budget, type));
+            add_server(new Server(server_id, period, budget, type));
         }
         if (servers.find("-1") != servers.end()) {
             for (const auto& server : servers["-1"]) {
                 int server_id = stoi(server["server_id"].get<string>());
-                double bandwidth = stod(server["bandwidth"].get<string>());
+//              double bandwidth = stod(server["bandwidth"].get<string>());
+                double period = stod(server["period"].get<string>());
                 double budget = stod(server["budget"].get<string>());
                 ServerType type = (ServerType) (server["type"]);
 
-                add_server(new Server(server_id, bandwidth, budget, type));
+                add_server(new Server(server_id, period, budget, type));
             }
         }
     } else {

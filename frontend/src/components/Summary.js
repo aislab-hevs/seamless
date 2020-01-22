@@ -66,28 +66,41 @@ export default function Summary(props) {
         <Grid item xs>
           <Box pb={2}>
             <Typography className={classes.list_title} component='p'>Simulator options</Typography>
-            <Typography className={classes.list} component='li'><span>Date: </span> 
-            {props.date ? new Date(props.date).toLocaleString() : new Date(config.date).toLocaleString()}</Typography>
-            <Typography className={classes.list} component='li'><span>Number of Agents:</span> {config.agents_n}</Typography>
+            <Typography className={classes.list} component='li'><span>Date: </span>
+              {props.date ? new Date(props.date).toLocaleString() : new Date(config.date).toLocaleString()}</Typography>
+            <Typography className={classes.list} component='li'><span>Name: </span> {config.sim_name}</Typography>
             <Typography className={classes.list} component='li'><span>Minimum channel delay:</span> {config.min_delay}</Typography>
-            <Typography className={classes.list} component='li'><span>Maximum channel delay:</span> {config.min_delay}</Typography>
+            <Typography className={classes.list} component='li'><span>Maximum channel delay:</span> {config.max_delay}</Typography>
             <Typography className={classes.list} component='li'><span>Simulation time:</span> {config.time}</Typography>
           </Box>
         </Grid>
         <Grid item xs>
           <Box pb={2}>
             <Typography className={classes.list_title} component='p'>Agents options</Typography>
+            <Typography className={classes.list} component='li'><span>Number of Agents:</span> {config.agents_n}</Typography>
             <Typography className={classes.list} component='li'><span>DF Scheduling Algorithm:</span> {constants.SchedType[config.DF_sched_type]}</Typography>
             {config.DF_sched_type === 1 && <Typography className={classes.list} component='li'><span>Quantum:</span> {config.DF_quantum}</Typography>}
             <Typography className={classes.list} component='li'><span>DF Message server mode:</span> {String(config.DF_msg_server_mode ? '✓' : '✗')}</Typography>
-            {config.DF_msg_server_mode && <Typography className={classes.list} component='li'><span>DF Message server type:</span> {constants.ServerType[config.DF_server_type]}</Typography>}
+            {config.DF_msg_server_mode &&
+              <>
+                <Typography className={classes.list} component='li'><span>DF Message server type:</span> {constants.ServerType[config.DF_server_type]}</Typography>
+                <Typography className={classes.list} component='li'><span>DF Message server budget:</span> {config.DF_server_budget}</Typography>
+                <Typography className={classes.list} component='li'><span>DF Message server period:</span> {config.DF_server_period}</Typography>
+              </>
+            }
             <Typography className={classes.list} component='li'><span>Apply for every agent:</span> {config.apply_for_all ? '✓' : '✗'}</Typography>
             {config.apply_for_all &&
               <>
                 <Typography className={classes.list} component='li'><span>Scheduling Algorithm:</span> {constants.SchedType[config.sched_type]}</Typography>
                 {config.sched_type === 1 && <Typography className={classes.list} component='li'><span>Quantum:</span> {config.quantum}</Typography>}
                 <Typography className={classes.list} component='li'><span>Message server mode:</span> {config.msg_server_mode ? '✓' : '✗'}</Typography>
-                {config.msg_server_mode && <Typography className={classes.list} component='li'><span>Message server type:</span> {constants.ServerType[config.server_type]}</Typography>}
+                {config.msg_server_mode &&
+                  <>
+                    <Typography className={classes.list} component='li'><span>Message server type:</span> {constants.ServerType[config.server_type]}</Typography>
+                    <Typography className={classes.list} component='li'><span>Message server budget:</span> {config.server_budget}</Typography>
+                    <Typography className={classes.list} component='li'><span>Message server period:</span> {config.server_period}</Typography>
+                  </>
+                }
               </>
             }
           </Box>
@@ -125,7 +138,7 @@ export default function Summary(props) {
                       <span>Scheduling Algorithm: </span>
                       {constants.SchedType[config.sched_type]}
                     </Typography>
-                    {config.sched_type === 1
+                    {config.sched_type === constants.SchedTypeEnum['RR']
                       && <>
                         <Typography className={classes.list} component='li'>
                           <span>Quantum: </span>
@@ -142,6 +155,14 @@ export default function Summary(props) {
                         <Typography className={classes.list} component='li'>
                           <span>Message server type: </span>
                           {constants.ServerType[config.server_type]}
+                        </Typography>
+                        <Typography className={classes.list} component='li'>
+                          <span>Message server budget: </span>
+                          {config.server_budget}
+                        </Typography>
+                        <Typography className={classes.list} component='li'>
+                          <span>Message server period: </span>
+                          {config.server_period}
                         </Typography>
                       </>
                     }
@@ -168,6 +189,14 @@ export default function Summary(props) {
                         <Typography className={classes.list} component='li'>
                           <span>Message server type: </span>
                           {constants.ServerType[agents[id].server_type]}
+                        </Typography>
+                        <Typography className={classes.list} component='li'>
+                          <span>Message server budget: </span>
+                          {agents[id].server_budget}
+                        </Typography>
+                        <Typography className={classes.list} component='li'>
+                          <span>Message server period: </span>
+                          {agents[id].server_period}
                         </Typography>
                       </>
                     }

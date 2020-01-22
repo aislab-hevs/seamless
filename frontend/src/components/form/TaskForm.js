@@ -65,7 +65,8 @@ export default function TaskForm(props) {
     initValue('server', '-1');
     initValue('n_exec', '-1');
     initValue('firstActivationTime', '-1');
-    initValue('lastActivationTime', '-1')
+    initValue('lastActivationTime', '-1');
+    initValue('arrivalTime', '0')
   }, [taskIndex]) // initialize isPublic to false as default (for each new task!)
 
   const getServers = () => {
@@ -145,7 +146,17 @@ export default function TaskForm(props) {
               placeholder="1"
               margin="normal"
               fullWidth
-              onChange={handleChange(taskIndex, 'value')}
+              onChange={(event) => {
+                handleChange(taskIndex, 'value')(event);
+                setKnowledge(knowledge => ({ // mirror value
+                  ...knowledge, // keep old knowledge (whole)...
+                  [taskIndex]: {
+                    ...knowledge[taskIndex], // keep already set properties...
+                    ['residualComputationTime']: knowledge[taskIndex].computationTime // update new values
+                  }
+                }))
+              }
+              }
               value={(knowledge[taskIndex] && knowledge[taskIndex].computationTime) || ''}
               error={error[`Task ${taskIndex + 1} Computation Time`] || (knowledge[taskIndex] && Number(knowledge[taskIndex].computationTime) < 1)}
               helperText={(knowledge[taskIndex] && Number(knowledge[taskIndex].computationTime) < 1) ? 'Must be greater than 0' : undefined}
@@ -158,6 +169,8 @@ export default function TaskForm(props) {
               }}
             />
             <TextField
+              style={{ display: 'none' }} // hide element
+              disabled
               id="residualComputationTime"
               name="residualComputationTime"
               className={classes.spaced}
@@ -167,6 +180,7 @@ export default function TaskForm(props) {
               fullWidth
               onChange={handleChange(taskIndex, 'value')}
               value={(knowledge[taskIndex] && knowledge[taskIndex].residualComputationTime) || ''}
+              // value={(knowledge[taskIndex] && knowledge[taskIndex].computationTime) || ''}
               error={error[`Task ${taskIndex + 1} Residual Computation Time`] || (knowledge[taskIndex] && (Number(knowledge[taskIndex].residualComputationTime) > Number(knowledge[taskIndex].computationTime)))}
               helperText={(knowledge[taskIndex] && (Number(knowledge[taskIndex].residualComputationTime) > Number(knowledge[taskIndex].computationTime))) ? 'Must be lesser than or equal to computation time' : undefined}
               InputProps={{
@@ -177,43 +191,6 @@ export default function TaskForm(props) {
                 }
               }}
             />
-            <TextField
-              id="arrivalTime"
-              name="arrivalTime"
-              className={classes.spaced}
-              label="Arrival Time"
-              placeholder="1"
-              margin="normal"
-              fullWidth
-              onChange={handleChange(taskIndex, 'value')}
-              value={(knowledge[taskIndex] && knowledge[taskIndex].arrivalTime) || ''}
-              error={error[`Task ${taskIndex + 1} Arrival Time`] || (knowledge[taskIndex] && (Number(knowledge[taskIndex].arrivalTime) < 0))}
-              helperText={(knowledge[taskIndex] && (Number(knowledge[taskIndex].arrivalTime) < 0)) ? 'Must be positive' : undefined}
-              InputProps={{
-                inputProps: {
-                  type: 'number',
-                  min: 1,
-                  max: 100,
-                }
-              }}
-            />
-            <FormControlLabel
-              className={classes.spaced}
-              control={
-                <Switch
-                  checked={(knowledge[taskIndex] && knowledge[taskIndex].isPublic) || false}
-                  onChange={handleChange(taskIndex, 'checked')}
-                  name='isPublic'
-                  value='isPublic'
-                  color="secondary"
-                />
-              }
-              label="Public"
-            />
-          </FormGroup>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <FormGroup>
             <TextField
               id="period"
               name="period"
@@ -244,8 +221,45 @@ export default function TaskForm(props) {
               fullWidth
               onChange={handleChange(taskIndex, 'value')}
               value={(knowledge[taskIndex] && knowledge[taskIndex].relativeDeadline) || ''}
-              error={error[`Task ${taskIndex + 1} Relative Deadline`] || (knowledge[taskIndex] && (Number(knowledge[taskIndex].relativeDeadline) < Number(knowledge[taskIndex].period)))}
-              helperText={(knowledge[taskIndex] && (Number(knowledge[taskIndex].relativeDeadline) < Number(knowledge[taskIndex].period))) ? 'Must be greater than or equal to the period' : undefined}
+              error={error[`Task ${taskIndex + 1} Relative Deadline`] || (knowledge[taskIndex] && (Number(knowledge[taskIndex].relativeDeadline) < Number(knowledge[taskIndex].computationTime)))}
+              helperText={(knowledge[taskIndex] && (Number(knowledge[taskIndex].relativeDeadline) < Number(knowledge[taskIndex].computationTime))) ? 'Must be greater than or equal to the period' : undefined}
+              InputProps={{
+                inputProps: {
+                  type: 'number',
+                  min: 1,
+                  max: 100,
+                }
+              }}
+            />
+            <FormControlLabel
+              className={classes.spaced}
+              control={
+                <Switch
+                  checked={(knowledge[taskIndex] && knowledge[taskIndex].inTaskset) || false}
+                  onChange={handleChange(taskIndex, 'checked')}
+                  name='inTaskset'
+                  value='inTaskset'
+                  color="secondary"
+                />
+              }
+              label="Add to taskset"
+            />
+          </FormGroup>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <FormGroup>
+            <TextField
+              id="arrivalTime"
+              name="arrivalTime"
+              className={classes.spaced}
+              label="Arrival Time"
+              placeholder="1"
+              margin="normal"
+              fullWidth
+              onChange={handleChange(taskIndex, 'value')}
+              value={(knowledge[taskIndex] && knowledge[taskIndex].arrivalTime) || ''}
+              error={error[`Task ${taskIndex + 1} Arrival Time`] || (knowledge[taskIndex] && (Number(knowledge[taskIndex].arrivalTime) < 0))}
+              helperText={(knowledge[taskIndex] && (Number(knowledge[taskIndex].arrivalTime) < 0)) ? 'Must be positive' : undefined}
               InputProps={{
                 inputProps: {
                   type: 'number',
@@ -339,14 +353,14 @@ export default function TaskForm(props) {
               className={classes.spaced}
               control={
                 <Switch
-                  checked={(knowledge[taskIndex] && knowledge[taskIndex].inTaskset) || false}
+                  checked={(knowledge[taskIndex] && knowledge[taskIndex].isPublic) || false}
                   onChange={handleChange(taskIndex, 'checked')}
-                  name='inTaskset'
-                  value='inTaskset'
+                  name='isPublic'
+                  value='isPublic'
                   color="secondary"
                 />
               }
-              label="Add to taskset"
+              label="Public"
             />
           </FormGroup>
         </Grid>

@@ -33,6 +33,7 @@ app.get('/simulation/log/:user/:date', auth.requireAuth, (req, res) => sim.getLo
 app.get('/simulation/reports/:user', auth.requireAuth, (req, res) => sim.getSimulations(req, res));
 app.post('/simulation', auth.requireAuth, (req, res) => sim.runSimulation(req, res));
 app.post('/simulations/:user/delete', auth.requireAuth, (req, res) => sim.deleteSimulations(req, res));
+app.get('/download/:user/:date', auth.requireAuth, (req, res) => sim.getSimulationFiles(req, res));
 
 const PORT = process.env.SERVER_PORT || 4000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));

@@ -1,0 +1,20 @@
+{
+    "0": [
+        {
+            "isPublic": false,
+            "inTaskset": true,
+            "server": "-1",
+            "n_exec": "-1",
+            "firstActivationTime": "-1",
+            "lastActivationTime": "-1",
+            "arrivalTime": "0",
+            "id": "0",
+            "agentExecutor": "0",
+            "agentDemander": "0",
+            "computationTime": "3",
+            "residualComputationTime": "3",
+            "period": "13",
+            "relativeDeadline": "13"
+        }
+    ]
+}

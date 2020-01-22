@@ -28,7 +28,7 @@ export default function MergedUtilChart(props) {
         type="step"
       />
       <Line
-        dot={false}
+        // dot={false}
         dataKey='potential utilization'
         stroke={colors[1]}
         activeDot={{ r: 6 }}

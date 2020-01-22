@@ -22,8 +22,8 @@ function History(props) {
   const [token] = useSessionStorage('token');
   const { user } = props
 
-  const createData = (name, year, month, month_name, day, hour, ref) => {
-    return { name, year, month, month_name, day, hour, ref };
+  const createData = (number, year, month, month_name, day, hour, name, ref) => {
+    return { number, year, month, month_name, day, hour, name, ref };
   }
 
   const parseDate = isoDate => {
@@ -40,8 +40,8 @@ function History(props) {
     const res = await api.getSimulations(name, auth);
     if (res) {
       let runs = res.map((run, index) => {
-        const { year, month, month_name, day, hour } = parseDate(run);
-        return createData(index + 1, year, month, month_name, day, hour, run);
+        const { year, month, month_name, day, hour } = parseDate(run.date);
+        return createData(index + 1, year, month, month_name, day, hour, run.name, run.date);
       });
       setRuns(runs);
       setLoading(false);
@@ -50,13 +50,13 @@ function History(props) {
 
   const deleteSelection = async (selection) => {
     setLoading(true);
-    await api.deleteSimulations(user.name, selection, token);
-    await fetchSimulations(user.name, token);
+    await api.deleteSimulations(user.email, selection, token);
+    setTimeout(() => { setRuns({}) }, 1000); // to force re-render
   }
 
   useEffect(() => {
     const abortController = new AbortController();
-    if (token) fetchSimulations(user.name, token);
+    if (token) fetchSimulations(user.email, token);
     return () => { abortController.abort() }; //cleanup async calls
   }, [token, runs.length])
 
@@ -75,7 +75,7 @@ function History(props) {
         <>
           {routeResults ||
             <Grid item xs={12} sm={11}>
-              <EnhancedTable user={user.name} rows={runs} navigate={navigate} deleteSelection={deleteSelection} />
+              <EnhancedTable user={user.email} rows={runs} navigate={navigate} deleteSelection={deleteSelection} />
             </Grid>
           }
         </>

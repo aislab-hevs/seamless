@@ -105,7 +105,9 @@ double Ag_Scheduler::ag_sched_test(vector<Task*> p_ag_tasks_vector,
     //note residual computation time [ok?] --> si pu� usare CRes per "migliorare" la stima di U, ottenendo un stima pi� ottimistica
     if (!p_ag_tasks_vector.empty()) {
         for (auto task : p_ag_tasks_vector) {
-            if (task->getTaskServer() != -1 && server_handler != nullptr) {
+            int server = task->getTaskServer();
+            if (server != -1 && server != 100 && server != 200
+                    && server_handler != nullptr) {
                 Server* server = server_handler->get_server(
                         task->getTaskServer());
                 if (!server->is_empty()) {
@@ -132,67 +134,72 @@ vector<Task*> Ag_Scheduler::eval_current_taskset(double window_start,
     vector<Task*> taskset;
     //eval release vector
     for (auto task : ag_tasks_vector_to_release) {
-        if (task->getTaskServer() != -1) {
-            int server = task->getTaskServer();
-            auto it =
-                    find_if(taskset.begin(), taskset.end(),
-                            [&server](Task* obj) {return obj->getTaskServer() == server;});
-            if (it == taskset.end()) {
-                taskset.push_back(task);
-            }
-        } else if (task->getTaskNExec() == -1) {
-            int id = task->getTaskId();
-            int demander = task->getTaskDemander();
-            auto it =
-                    find_if(taskset.begin(), taskset.end(),
-                            [id, demander](Task* obj)
-                            {   return (obj->getTaskId() == id) && (obj->getTaskDemander() == demander);}); // flip the condition below here
-            if (it == taskset.end()) { // note: add check -> if task has not been activated and will not be activated in the window (t_now + period > window end), don't consider it!
-                taskset.push_back(task);
-            }
-        } else {
-            int id = task->getTaskId();
-            int demander = task->getTaskDemander();
-            auto it =
-                    find_if(taskset.begin(), taskset.end(),
-                            [id, demander](Task* obj)
-                            {   return (obj->getTaskId() == id) && (obj->getTaskDemander() == demander);});
-            if (it == taskset.end()) {
-                int n_exec = task->getTaskNExec();
-                int task_start = task->getTaskArrivalTime();
-                int task_end = task_start
-                        + ((n_exec + 1) * task->getTaskPeriod());
-                if (check_overlap(task_start, task_end, window_start,
-                        window_end)) {
+        int server = task->getTaskServer();
+        if (server != 100 && server != 200) {
+            if (server != -1) {
+                auto it =
+                        find_if(taskset.begin(), taskset.end(),
+                                [&server](Task* obj) {return obj->getTaskServer() == server;});
+                if (it == taskset.end()) {
                     taskset.push_back(task);
+                }
+            } else if (task->getTaskNExec() == -1) {
+                int id = task->getTaskId();
+                int demander = task->getTaskDemander();
+                auto it =
+                        find_if(taskset.begin(), taskset.end(),
+                                [id, demander](Task* obj)
+                                {   return (obj->getTaskId() == id) && (obj->getTaskDemander() == demander);}); // flip the condition below here
+                if (it == taskset.end()) { // note: add check -> if task has not been activated and will not be activated in the window (t_now + period > window end), don't consider it!
+                    taskset.push_back(task);
+                }
+            } else {
+                int id = task->getTaskId();
+                int demander = task->getTaskDemander();
+                auto it =
+                        find_if(taskset.begin(), taskset.end(),
+                                [id, demander](Task* obj)
+                                {   return (obj->getTaskId() == id) && (obj->getTaskDemander() == demander);});
+                if (it == taskset.end()) {
+                    int n_exec = task->getTaskNExec();
+                    int task_start = task->getTaskArrivalTime();
+                    int task_end = task_start
+                            + ((n_exec + 1) * task->getTaskPeriod());
+                    if (check_overlap(task_start, task_end, window_start,
+                            window_end)) {
+                        taskset.push_back(task);
+                    }
                 }
             }
         }
+
     }
 //eval ready vector
     for (auto task : ag_tasks_vector_ready) {
-        if (task->getTaskNExec() != -1) {
-            int id = task->getTaskId();
-            int demander = task->getTaskDemander();
-            auto it =
-                    find_if(taskset.begin(), taskset.end(),
-                            [id, demander](Task* obj)
-                            {   return (obj->getTaskId() == id) && (obj->getTaskDemander() == demander);});
-            if (it == taskset.end()) {
-                int task_start = task->getTaskArrivalTime();
-                int task_end = task_start + task->getTaskPeriod();
-                if (check_overlap(task_start, task_end, window_start,
-                        window_end)) {
+        int server = task->getTaskServer();
+        if (server != 100 && server != 200) {
+            if (task->getTaskNExec() != -1) {
+                int id = task->getTaskId();
+                int demander = task->getTaskDemander();
+                auto it =
+                        find_if(taskset.begin(), taskset.end(),
+                                [id, demander](Task* obj)
+                                {   return (obj->getTaskId() == id) && (obj->getTaskDemander() == demander);});
+                if (it == taskset.end()) {
+                    int task_start = task->getTaskArrivalTime();
+                    int task_end = task_start + task->getTaskPeriod();
+                    if (check_overlap(task_start, task_end, window_start,
+                            window_end)) {
+                        taskset.push_back(task);
+                    }
+                }
+            } else if (server != -1) {
+                auto it =
+                        find_if(taskset.begin(), taskset.end(),
+                                [&server](Task* obj) {return obj->getTaskServer() == server;});
+                if (it == taskset.end()) {
                     taskset.push_back(task);
                 }
-            }
-        } else if (task->getTaskServer() != -1) {
-            int server = task->getTaskServer();
-            auto it =
-                    find_if(taskset.begin(), taskset.end(),
-                            [&server](Task* obj) {return obj->getTaskServer() == server;});
-            if (it == taskset.end()) {
-                taskset.push_back(task);
             }
         }
     }
@@ -202,23 +209,25 @@ vector<Task*> Ag_Scheduler::eval_current_taskset(double window_start,
 
 void Ag_Scheduler::eval_pending_taskset(vector<Task*> &pot_taskset) {
     for (auto task : ag_pending_tasks) {
-        if (task->getTaskServer() != -1) {
-            int server = task->getTaskServer();
-            auto it =
-                    find_if(pot_taskset.begin(), pot_taskset.end(),
-                            [&server](Task* obj) {return obj->getTaskServer() == server;});
-            if (it == pot_taskset.end()) {
-                pot_taskset.push_back(task);
-            }
-        } else {
-            int id = task->getTaskId();
-            int demander = task->getTaskDemander();
-            auto it =
-                    find_if(pot_taskset.begin(), pot_taskset.end(),
-                            [id, demander](Task* obj)
-                            {   return (obj->getTaskId() == id) && (obj->getTaskDemander() == demander);});
-            if (it == pot_taskset.end()) {
-                pot_taskset.push_back(task);
+        int server = task->getTaskServer();
+        if (server != 100 && server != 200) {
+            if (server != -1) {
+                auto it =
+                        find_if(pot_taskset.begin(), pot_taskset.end(),
+                                [&server](Task* obj) {return obj->getTaskServer() == server;});
+                if (it == pot_taskset.end()) {
+                    pot_taskset.push_back(task);
+                }
+            } else {
+                int id = task->getTaskId();
+                int demander = task->getTaskDemander();
+                auto it =
+                        find_if(pot_taskset.begin(), pot_taskset.end(),
+                                [id, demander](Task* obj)
+                                {   return (obj->getTaskId() == id) && (obj->getTaskDemander() == demander);});
+                if (it == pot_taskset.end()) {
+                    pot_taskset.push_back(task);
+                }
             }
         }
     }
@@ -242,8 +251,8 @@ bool Ag_Scheduler::check_overlap(double task_start, double task_end,
     return condition;
 }
 
-double Ag_Scheduler::get_current_util(ServerHandler* server_handler) {
-    return ag_sched_test(eval_current_taskset(0, INT32_MAX), server_handler);
+double Ag_Scheduler::get_current_util(ServerHandler* server_handler, double msg_util) {
+    return ag_sched_test(eval_current_taskset(0, INT32_MAX), server_handler) + msg_util;
 }
 
 /*
@@ -306,7 +315,7 @@ void Ag_Scheduler::ag_sort_tasks_ddl(double comp_time_head_ready) {
     //return ag_tasks_vector_to_release;
 }
 
-void Ag_Scheduler::ag_sort_tasks_comp_time(){
+void Ag_Scheduler::ag_sort_tasks_comp_time() {
     std::sort(ag_tasks_vector_ready.begin() + 1, ag_tasks_vector_ready.end(),
             [](Task* a, Task* b) {
                 return ((a->getTaskCompTime() < b->getTaskCompTime()));
@@ -503,12 +512,13 @@ bool Ag_Scheduler::check_cnet(int ag_id, bool &busy, Need* p_need) {
 }
 
 bool Ag_Scheduler::check_rbn(int ag_id, ServerHandler* ag_Server_Handler,
-        Need* p_need) {
+        Need* p_need, double msg_util) {
     bool policy_holds = false;
     vector<Task*> potential_taskset = eval_taskset(p_need->get_needed_t_R(),
             p_need->get_needed_t_E());
     double pending_util = ag_sched_test(ag_pending_tasks, ag_Server_Handler);
-    double potential_util = ag_sched_test(potential_taskset, ag_Server_Handler);
+    double potential_util = ag_sched_test(potential_taskset, ag_Server_Handler)
+            + msg_util;
 
     // write potential util report
     write_pot_util_json(ag_id, simTime().dbl(), potential_util);
@@ -534,16 +544,21 @@ bool Ag_Scheduler::check_rbn(int ag_id, ServerHandler* ag_Server_Handler,
     return policy_holds;
 }
 
-bool Ag_Scheduler::check_rbn_plus(int ag_id, double& bid, double& utilization, ServerHandler* ag_Server_Handler, Need* p_need){
+bool Ag_Scheduler::check_rbn_plus(int ag_id, double& bid, double& utilization,
+        ServerHandler* ag_Server_Handler, Need* p_need, double msg_util) {
     bool policy_holds = false;
-    vector<Task*> current_taskset = eval_current_taskset(p_need->get_needed_t_R(), p_need->get_needed_t_E());
-    vector<Task*> potential_taskset = eval_taskset(p_need->get_needed_t_R(), p_need->get_needed_t_E());
+    vector<Task*> current_taskset = eval_current_taskset(
+            p_need->get_needed_t_R(), p_need->get_needed_t_E());
+    vector<Task*> potential_taskset = eval_taskset(p_need->get_needed_t_R(),
+            p_need->get_needed_t_E());
     double pending_util = ag_sched_test(ag_pending_tasks, ag_Server_Handler);
-    double potential_util = ag_sched_test(potential_taskset, ag_Server_Handler);
-    double current_util = ag_sched_test(current_taskset, ag_Server_Handler);
+    double potential_util = ag_sched_test(potential_taskset, ag_Server_Handler)
+            + msg_util;
+    double current_util = ag_sched_test(current_taskset, ag_Server_Handler)
+            + msg_util;
 
     // write potential util report
-     write_pot_util_json(ag_id, simTime().dbl(), potential_util);
+    write_pot_util_json(ag_id, simTime().dbl(), potential_util);
 
     utilization = current_util;
     if (potential_util <= 1) {
@@ -556,18 +571,20 @@ bool Ag_Scheduler::check_rbn_plus(int ag_id, double& bid, double& utilization, S
                   << endl;
     } else {
         Task* pending = ag_pending_tasks.front();
-        double t_offer = ceil(pending->getTaskCompTime()/(1 - current_util));
+        double t_offer = ceil(pending->getTaskCompTime() / (1 - current_util));
         pending->setTaskPeriod(t_offer);
         pending->setTaskDeadLine(t_offer);
         bid = t_offer;
         EV << "Ag[" << ag_id << "] received a request for bidding\n"
-                          << "Pending Utilization factor: " << pending_util
-                          << "\nCurrent Utilization factor: "<< current_util
-                          << "\nPotential Utilization factor: " << potential_util
-                          << "\nOffered period t_min: " << bid << endl;
-        if(t_offer >= p_need->get_needed_t_min() && t_offer <= p_need->get_needed_t_max()){
+                  << "Pending Utilization factor: " << pending_util
+                  << "\nCurrent Utilization factor: " << current_util
+                  << "\nPotential Utilization factor: " << potential_util
+                  << "\nOffered period t_min: " << bid << endl;
+        if (t_offer >= p_need->get_needed_t_min()
+                && t_offer <= p_need->get_needed_t_max()) {
             policy_holds = true;
-        } else policy_holds = false;
+        } else
+            policy_holds = false;
     }
     return policy_holds;
 }

@@ -37,7 +37,7 @@ export default function ServersTable(props) {
               <TableRow>
                 <TableCell>Server Id</TableCell>
                 <TableCell align="right">Agent</TableCell>
-                <TableCell align="right">Bandwidth</TableCell>
+                <TableCell align="right">Period</TableCell>
                 <TableCell align="right">Budget</TableCell>
                 <TableCell align="right">Type</TableCell>
               </TableRow>
@@ -47,7 +47,7 @@ export default function ServersTable(props) {
                 <TableRow key={index}>
                   <TableCell>{server.server_id}</TableCell>
                   <TableCell align="right">{server.agent_id}</TableCell>
-                  <TableCell align="right">{server.bandwidth}</TableCell>
+                  <TableCell align="right">{server.period}</TableCell>
                   <TableCell align="right">{server.budget}</TableCell>
                   <TableCell align="right">{constants.ServerType[server.type]}</TableCell>
                 </TableRow>

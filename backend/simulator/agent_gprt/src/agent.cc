@@ -97,10 +97,11 @@ void agent::initialize() {
         ag_Server_Handler = new ServerHandler;
         if (msg_server_mode) {
             int server_type = (int) par("server_type");
-            double bandwidth = 0.1;
-            double budget = 1;
-            ag_Server_Handler->add_server(new Server(100, bandwidth, budget, (ServerType) server_type));
-            ag_Server_Handler->add_server(new Server(200, bandwidth, budget, (ServerType) server_type));
+            double server_budget = (double) par("server_budget");
+            double server_period = (double) par("server_period");
+//            double bandwidth = server_budget/server_period;
+            ag_Server_Handler->add_server(new Server(100, server_period, server_budget, (ServerType) server_type)); // read
+            ag_Server_Handler->add_server(new Server(200, server_period, server_budget, (ServerType) server_type)); // write
         }
     }
 
@@ -402,6 +403,7 @@ void agent::finish() {
         save_lateness_json(timestamp, user);
         save_util_json(timestamp, user);
         save_pot_util_json(timestamp, user);
+        save_ddl_checks_json(timestamp, user);
     }
     //
     while(!cSimulation::getActiveSimulation()->getFES()->isEmpty()){
@@ -693,6 +695,21 @@ void agent::check_task_completion(agentMSG *agMsg) {
                           << p_task->getTaskDemander() <<"] tskEx: ag["
                           << p_task->getTaskExecuter() << "] tskRt: "
                           << p_task->getTaskReleaseTime() << endl;
+
+                //TODO if task is a service (dm !== ex) send completion message
+                if (p_task->getTaskDemander() != p_task->getTaskExecuter()) {
+                    char msgname[30];
+                    sprintf(msgname, "Task completed!");
+                    agentMSG *comp_msg = new agentMSG(msgname);
+                    comp_msg->setDestination(ag_settings->get_ag_gate_out(p_task->getTaskDemander()));
+                    comp_msg->setSource(getIndex());
+                    if ((bool) par("msg_server_mode") == true) {
+                        create_msg_task(comp_msg, "write");
+                    } else {
+                        forwardMessage(comp_msg);
+                    }
+                }
+
                 //remove head on the ordered vector
                 ag_Sched->ag_remove_head_in_ready_tasks_vector();
 
@@ -792,6 +809,10 @@ void agent::check_ddl_miss(agentMSG *agMsg) {
         //calcolato nel momento in cui perde la deadline
         double c_res;
         c_res = ag_Sched->get_ddl_miss(p_task, first_task_id);
+
+        // write ddl_check
+        write_ddl_checks(agMsg->getAg_task_id(), getIndex());
+
         if (fabs(c_res) > ag_Sched->EPSILON && c_res != -1) {
 
 //          //remove head on the ordered vector
@@ -802,6 +823,15 @@ void agent::check_ddl_miss(agentMSG *agMsg) {
 
             //calculate the utilization factor when a ddl_miss occurs
             double ag_utilization = ag_Sched->ag_sched_test(ag_Sched->get_tasks_vector_to_release());
+
+            //add msg_server util if needed
+            bool msg_server_mode = (bool) par("msg_server_mode");
+            if(msg_server_mode){
+                double server_budget = (double) par("server_budget");
+                double server_period = (double) par("server_period");
+                double msg_util = server_budget/server_period * 2; // count both read and write msg servers
+                ag_utilization += msg_util;
+            }
 
             //calculate the number of tasks when a ddl_miss occurs (changed to ready)
             int num_tasks = ag_Sched->get_tasks_vector_ready().size();
@@ -1080,8 +1110,18 @@ void agent::schedule_taskset_rt(agentMSG *msg) {
         //rimanda il messaggio all'arrival time del task in considerazione
         //(in poche parole si mette in attesa)
         if (fabs(p_task->getTaskArrivalTime() - simTime().dbl()) > ag_Sched->EPSILON) {
+
+            //add msg_server util if needed
+            bool msg_server_mode = (bool) par("msg_server_mode");
+            double msg_util = 0;
+            if (msg_server_mode) {
+                double server_budget = (double) par("server_budget");
+                double server_period = (double) par("server_period");
+                msg_util = server_budget / server_period * 2; // count both read and write msg servers
+            }
+
             //write utilization report
-            write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler), "release");
+            write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler, msg_util), "release");
 
             agentMSG *task_activation_msg = set_next_task_arrival();
 
@@ -1268,6 +1308,15 @@ void agent::schedule_taskset_rt(agentMSG *msg) {
 
 void agent::check_task_completion_rt(agentMSG *agMsg) {
 
+    //add msg_server util if needed
+    bool msg_server_mode = (bool) par("msg_server_mode");
+    double msg_util = 0;
+    if (msg_server_mode) {
+        double server_budget = (double) par("server_budget");
+        double server_period = (double) par("server_period");
+        msg_util = server_budget / server_period * 2; // count both read and write msg servers
+    }
+
     //--CHECK TASK FINITO--
     if (!ag_Sched->get_tasks_vector_ready().empty()) {
         Task *p_task;
@@ -1312,6 +1361,20 @@ void agent::check_task_completion_rt(agentMSG *agMsg) {
                               << p_task->getTaskDemander() << "] tskEx: ag["
                               << p_task->getTaskExecuter() << "] tskRt: "
                               << p_task->getTaskReleaseTime() << endl;
+                }
+
+                //TODO if task is a service (dm !== ex) send completion message
+                if (p_task->getTaskDemander() != p_task->getTaskExecuter()) {
+                    char msgname[30];
+                    sprintf(msgname, "Task completed!");
+                    agentMSG *comp_msg = new agentMSG(msgname);
+                    comp_msg->setDestination(ag_settings->get_ag_gate_out(p_task->getTaskDemander()));
+                    comp_msg->setSource(getIndex());
+                    if ((bool) par("msg_server_mode") == true) {
+                        create_msg_task(comp_msg, "write");
+                    } else {
+                        forwardMessage(comp_msg);
+                    }
                 }
 
                 //remove head on the ordered vector
@@ -1363,7 +1426,7 @@ void agent::check_task_completion_rt(agentMSG *agMsg) {
                         p_server->setTaskArrivalTime(simTime().dbl());
                         ag_Sched->ag_add_task_in_vector_to_release(p_server);
                         //write utilization report
-                        write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler), "server-activation");
+                        write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler, msg_util), "server-activation");
                         //note test per evitare ridondanza di messaggi set_next_task_arrival
                         cancel_redundant_msg("Setting next task arrival");
 
@@ -1398,7 +1461,7 @@ void agent::check_task_completion_rt(agentMSG *agMsg) {
                 write_json_resp_per_task(p_task, getIndex(), simTime().dbl(), resp_time);
 
                 //write utilization report
-                write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler), "task completed");
+                write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler, msg_util), "task completed");
 
                 //schedule next activation
                 if (!ag_Sched->get_tasks_vector_ready().empty()) {
@@ -1432,7 +1495,7 @@ void agent::check_task_completion_rt(agentMSG *agMsg) {
                     p_server->setTaskArrivalTime(next_release);
                     ag_Sched->ag_add_task_in_vector_to_release(p_server);
                     //write utilization report
-                    write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler), "server-release");
+                    write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler, msg_util), "server-release");
                     //note test per evitare ridondanza di messaggi set_next_task_arrival
                     cancel_redundant_msg("Setting next task arrival");
 
@@ -1604,7 +1667,7 @@ void agent::begin_neg(agentMSG *agMsg) {
                 { return (task->getTaskId() == needed_id);});
         if (it != ag_tasks_vector.end()) {
             double min_T = p_need->get_needed_t_min();
-            Task* pend_task = *it;
+            Task* pend_task = tGen->cloneTask(*it);
             pend_task->setTaskDemander(agMsg->getSource());
             if(min_T > 1){ //note: check if task parameters have been set for RBNP [using min_T as sentinel]
                 pend_task->setTaskDeadLine(min_T);
@@ -1637,11 +1700,25 @@ void agent::begin_neg(agentMSG *agMsg) {
         break;
     }
     case RBN: {
-        policy_holds = ag_Sched->check_rbn(getIndex(), ag_Server_Handler, p_need);
+        bool msg_server_mode = (bool) par("msg_server_mode");
+        if(msg_server_mode){
+            double server_budget = (double) par("server_budget");
+            double server_period = (double) par("server_period");
+            double msg_util = server_budget/server_period * 2; // count both read and write msg servers
+            policy_holds = ag_Sched->check_rbn(getIndex(), ag_Server_Handler, p_need, msg_util);
+        }
+        else policy_holds = ag_Sched->check_rbn(getIndex(), ag_Server_Handler, p_need);
         reason = "utilization above limit";
         break;
     }
     case RBN_PLUS: {
+        bool msg_server_mode = (bool) par("msg_server_mode");
+        if(msg_server_mode){
+            double server_budget = (double) par("server_budget");
+            double server_period = (double) par("server_period");
+            double msg_util = server_budget/server_period * 2; // count both read and write msg servers
+            policy_holds = ag_Sched->check_rbn_plus(getIndex(), bid, utilization, ag_Server_Handler, p_need, msg_util);
+        }
         policy_holds = ag_Sched->check_rbn_plus(getIndex(), bid, utilization, ag_Server_Handler, p_need);
         reason = "utilization above limit";
         break;
@@ -1718,6 +1795,15 @@ void agent::reject(agentMSG *agMsg){
 }
 
 void agent::close(agentMSG *agMsg) {
+    //add msg_server util if needed
+    bool msg_server_mode = (bool) par("msg_server_mode");
+    double msg_util = 0;
+    if (msg_server_mode) {
+        double server_budget = (double) par("server_budget");
+        double server_period = (double) par("server_period");
+        msg_util = server_budget / server_period * 2; // count both read and write msg servers
+    }
+
     Need* p_need = agMsg->getNeed();
     if (p_need->get_needed_t_R() >= simTime().dbl()) {
         // update accepted requests
@@ -1738,10 +1824,10 @@ void agent::close(agentMSG *agMsg) {
                 //needed_task->setTaskDeadLine(p_need->get_needed_t_E());
                 needed_task->setTaskNExec(p_need->get_needed_t_n_exec());
                 //write utilization report
-                write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler), "pre-neg");
+                write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler, msg_util), "pre-neg");
                 ag_Sched->ag_add_task_in_vector_to_release(needed_task);
                 //write utilization report
-                write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler), "post-neg");
+                write_util_json_report(getIndex(), simTime().dbl(), ag_Sched->get_current_util(ag_Server_Handler, msg_util), "post-neg");
                 EV << "- T_id[" << needed_task->getTaskId() << "]   "
                         "tskDm: ag[" << agMsg->getSource() << "]   "
                         "R: " << p_need->get_needed_t_R() << "  "

@@ -17,7 +17,7 @@ const useStyles = makeStyles(theme => ({
 }))
 
 export default function ComboForm(props) {
-  const { isDisabled, agents_n, structureIndex, setStructureIndex, structure, setStructure, header, activeStep, error } = props;
+  const { isDisabled, agents_n, structureIndex, setStructureIndex, structure, setStructure, header, activeStep, error, setError } = props;
   const classes = useStyles();
 
   const getAgentsMenuItems = () => {
@@ -41,7 +41,8 @@ export default function ComboForm(props) {
       error={error}
     />,
     '2': <ServerForm
-      getAgentsMenuItems={getAgentsMenuItems}
+      rt_agents={props.rt_agents}
+      agents_n={agents_n}
       serverIndex={structureIndex}
       servers={structure}
       setServers={setStructure}
@@ -81,6 +82,8 @@ export default function ComboForm(props) {
             setStructure={setStructure}
             structureIndex={structureIndex}
             setStructureIndex={setStructureIndex}
+            error={error}
+            setError={setError}
           />
         </Grid>
       </Grid>

@@ -14,6 +14,7 @@ import { navigate, useQueryParams } from 'hookrouter';
 import * as api from '../../api/api';
 import * as validator from '../../utils/validator';
 import * as parser from '../../utils/inverseParser';
+import * as constants from '../../utils/constants';
 
 function Simulation(props) {
   const { user } = props;
@@ -41,7 +42,9 @@ function Simulation(props) {
       handleChange={handleChange}
       handleSubmit={handleSubmit}
       values={values}
+      setValues={setValues}
       error={error}
+      rt_agents={getRTAgents()}
     />,
     '1': <ComboForm
       activeStep={activeStep}
@@ -53,16 +56,19 @@ function Simulation(props) {
       structureIndex={agentIndex}
       setStructureIndex={setAgentIndex}
       error={error}
+      setError={setError}
     />,
     '2': <ComboForm
       activeStep={activeStep}
       header='SERVERS'
       agents_n={values.agents_n}
+      rt_agents={getRTAgents()}
       structure={servers}
       setStructure={setServers}
       structureIndex={serverIndex}
       setStructureIndex={setServerIndex}
       error={error}
+      setError={setError}
     />,
     '3': <ComboForm
       activeStep={activeStep}
@@ -74,6 +80,7 @@ function Simulation(props) {
       setStructureIndex={setTaskIndex}
       servers={servers}
       error={error}
+      setError={setError}
     />,
     '4': <ComboForm
       activeStep={activeStep}
@@ -87,6 +94,7 @@ function Simulation(props) {
       neg_type={values.neg_type}
       use_neg={values.use_neg}
       error={error}
+      setError={setError}
     />,
   });
 
@@ -127,20 +135,41 @@ function Simulation(props) {
   const getSkippable = activeStep => {
     switch (activeStep) {
       case 1: return values.apply_for_all
+      case 2: return true
       case 4: return !values.use_neg
       default: return true;
     }
   }
 
+  const getNextable = activeStep => {
+    switch (activeStep) {
+      case 1: return !values.apply_for_all
+      case 2: return getRTAgents().length > 0;
+      case 4: return values.use_neg
+      default: return true;
+    }
+  }
   const getAgList = () => {
     return [...Object.keys(agents)];
+  }
+
+  const getRTAgents = () => {
+    let rt_agents = [];
+    if (values.apply_for_all && values.sched_type === constants.SchedTypeEnum['EDF']) {
+      rt_agents = getAgList();
+    } else {
+      for (let key in agents) {
+        if (agents[key].sched_type === constants.SchedTypeEnum['EDF']) rt_agents.push(key);
+      }
+    }
+    return rt_agents;
   }
 
   const submitData = async () => {
     const valid = validate();
     //if valid do below else show error message with references
     if (valid) {
-      const config = { user: user.name, ...values };
+      const config = { user: user.email, ...values };
       const taskset = filterKnowledge(knowledge);
       const inputs = { agents, knowledge, taskset, servers, needs }
       let res = await api.runSimulation(config, inputs, token);
@@ -168,11 +197,11 @@ function Simulation(props) {
   }
 
   const handleView = () => {
-    navigate(`/dashboard/history/analysis/${user.name}/${values.date}`);
+    navigate(`/dashboard/history/analysis/${user.email}/${values.date}`);
   }
 
   const fetchSimulationConfig = async date => {
-    const inputs = await api.getInputs(user.name, date, token);
+    const inputs = await api.getInputs(user.email, date, token);
     // inverse parse inputs and set them
     setKnowledge(parser.inverseParse(inputs.knowledge));
     setServers(parser.inverseParse(inputs.servers));
@@ -202,6 +231,7 @@ function Simulation(props) {
           submitData={submitData}
           setIgnored={setIgnored}
           skippable={getSkippable(activeStep)}
+          nextable={getNextable(activeStep)}
           openSummary={openSummary}
         />
       </Box>

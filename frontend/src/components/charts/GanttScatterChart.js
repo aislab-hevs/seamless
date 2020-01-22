@@ -48,7 +48,7 @@ export default function GanttScatterChart(props) {
   const classes = useStyles();
 
   return (
-    <div>
+    <div style={{ marginBottom: '40px' }}>
       {Object.keys(data).map((key) => {
         return (
           <ComposedChart
@@ -101,7 +101,7 @@ export default function GanttScatterChart(props) {
                 />
               )}
             </Scatter>
-            <Tooltip cursor={false} offset={0} />
+            <Tooltip cursor={false} offset={10} />
             <Line
               isAnimationActive={false}
               dataKey='budget'

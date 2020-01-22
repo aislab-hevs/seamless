@@ -51,8 +51,8 @@ export default function KnowledgeTable(props) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {knowledge.sort((a, b) => a.id - b.id).map(task => (
-              <TableRow key={task.id}>
+            {knowledge.sort((a, b) => a.id - b.id).map((task, index) => (
+              <TableRow key={index}>
                 <TableCell align="right">{task.id}</TableCell>
                 <TableCell align="right">{task.agentExecutor === -1 ? 'All' : task.agentExecutor}</TableCell>
                 <TableCell align="right">{task.agentDemander === -1 ? 'All' : task.agentDemander}</TableCell>

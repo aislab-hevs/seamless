@@ -48,11 +48,12 @@ function getSorting(order, orderBy) {
 }
 
 const headRows = [
-  { id: 'name', numeric: false, disablePadding: true, label: 'N°' },
+  { id: 'number', numeric: false, disablePadding: true, label: 'N°' },
   { id: 'year', numeric: true, disablePadding: false, label: 'Year' },
   { id: 'month', numeric: true, disablePadding: false, label: 'Month' },
   { id: 'day', numeric: true, disablePadding: false, label: 'Day' },
   { id: 'hour', numeric: true, disablePadding: false, label: 'Hour' },
+  { id: 'name', numeric: true, disablePadding: false, label: 'Name' },
 ];
 
 function EnhancedTableHead(props) {
@@ -151,12 +152,12 @@ const EnhancedTableToolbar = props => {
     navigate(`/dashboard/simulation`, false, { date: ref });
   }
 
-  function handleDelete(event) {
+  async function handleDelete(event) {
     let simulations = [];
     for (let index of selected) {
       simulations.push(rows[index - 1].ref)
     }
-    deleteSelection(simulations);
+    await deleteSelection(simulations);
   }
 
   return (
@@ -264,7 +265,7 @@ export default function EnhancedTable(props) {
 
   function handleSelectAllClick(event) {
     if (event.target.checked) {
-      const newSelecteds = rows.map(n => n.name);
+      const newSelecteds = rows.map(n => n.number);
       setSelected(newSelecteds);
       return;
     }
@@ -334,7 +335,7 @@ export default function EnhancedTable(props) {
               {stableSort(rows, getSorting(order, orderBy))
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row, index) => {
-                  const isItemSelected = isSelected(row.name);
+                  const isItemSelected = isSelected(row.number);
                   const labelId = `enhanced-table-checkbox-${index}`;
 
                   return (
@@ -342,23 +343,24 @@ export default function EnhancedTable(props) {
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
-                      key={row.name}
+                      key={row.number}
                       selected={isItemSelected}
                     >
                       <TableCell padding="checkbox">
                         <Checkbox
-                          onClick={event => handleSelect(event, row.name)}
+                          onClick={event => handleSelect(event, row.number)}
                           checked={isItemSelected}
                           inputProps={{ 'aria-labelledby': labelId }}
                         />
                       </TableCell>
                       <TableCell component="th" id={labelId} scope="row" padding="none">
-                        {row.name}
+                        {row.number}
                       </TableCell>
                       <TableCell align="right">{row.year}</TableCell>
                       <TableCell align="right">{row.month_name}</TableCell>
                       <TableCell align="right">{row.day}</TableCell>
                       <TableCell align="right">{row.hour}</TableCell>
+                      <TableCell align="right">{row.name || '-'}</TableCell>
                       <TableCell align="right">
                         <Tooltip style={{ padding: 0 }} title="View">
                           <IconButton className={classes.colored_button} onClick={event => handleView(event, row.ref)} aria-label="view">

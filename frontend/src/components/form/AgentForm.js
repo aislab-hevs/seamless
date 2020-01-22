@@ -86,13 +86,23 @@ export default function AgentForm(props) {
               className={classes.spaced}
               label='Scheduling Algorithm'
               name='sched_type'
-              onChange={handleChange(agentIndex, 'value')}
+              onChange={(event) => {
+                handleChange(agentIndex, 'value')(event);
+                setAgents(agents => ({
+                  ...agents, // keep old agents (whole)...
+                  [agentIndex]: {
+                    ...agents[agentIndex], // keep already set properties...
+                    ['msg_server_mode']: false // update new values
+                  }
+                }))
+              }
+              }
               value={(agents[agentIndex] !== undefined && agents[agentIndex].sched_type)}
               error={error[`Agent ${agentIndex + 1} Scheduling Algorithm`]}
               // helpertext={hasError && agents[agentIndex].sched_type === undefined ? 'Required' : undefined}
               options={constants.SchedTypeEnum}
             />
-            {agents[agentIndex].sched_type === 1 &&
+            {agents[agentIndex].sched_type === constants.SchedTypeEnum['RR'] &&
               <TextField
                 id="quantum"
                 name="quantum"
@@ -113,15 +123,11 @@ export default function AgentForm(props) {
                   }
                 }}
               />}
-          </FormGroup>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <FormGroup>
             <FormControlLabel
               className={classes.spaced}
               control={
                 <Switch
-                  disabled={isDisabled}
+                  disabled={isDisabled || agents[agentIndex].sched_type !== constants.SchedTypeEnum['EDF']}
                   checked={(agents[agentIndex] !== undefined && agents[agentIndex].msg_server_mode) || false}
                   onChange={handleChange(agentIndex, 'checked')}
                   name='msg_server_mode'
@@ -131,17 +137,66 @@ export default function AgentForm(props) {
               }
               label="Message server mode"
             />
-            <CustomSelect
-              className={classes.spaced}
-              label='Message server type'
-              name='server_type'
-              onChange={handleChange(agentIndex, 'value')}
-              value={(agents[agentIndex] !== undefined && agents[agentIndex].server_type)}
-              options={constants.ServerTypeEnum}
-              disabled={agents[agentIndex] !== undefined && (!agents[agentIndex].msg_server_mode)}
-              error={error[`Agent ${agentIndex + 1} Message server type`]}
-            // helpertext={hasError && agents[agentIndex].msg_server_mode && agents[agentIndex].server_type === undefined ? 'Required' : undefined}
-            />
+          </FormGroup>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <FormGroup>
+            {agents[agentIndex].msg_server_mode &&
+              <>
+                <CustomSelect
+                  className={classes.spaced}
+                  label='Message server type'
+                  name='server_type'
+                  onChange={handleChange(agentIndex, 'value')}
+                  value={(agents[agentIndex] !== undefined && agents[agentIndex].server_type)}
+                  options={constants.ServerTypeEnum}
+                  disabled={agents[agentIndex] !== undefined && (!agents[agentIndex].msg_server_mode)}
+                  error={error[`Agent ${agentIndex + 1} Message server type`]}
+                // helpertext={hasError && agents[agentIndex].msg_server_mode && agents[agentIndex].server_type === undefined ? 'Required' : undefined}
+                />
+                <TextField
+                  id="server_budget"
+                  name="server_budget"
+                  className={classes.spaced}
+                  label="Budget"
+                  placeholder="1"
+                  margin="normal"
+                  fullWidth
+                  onChange={handleChange(agentIndex, 'value')}
+                  value={agents[agentIndex].server_budget || ''}
+                  error={error[`Agent ${agentIndex + 1} Message server budget`] || Number(agents[agentIndex].server_budget) < 0 ||  (Number(agents[agentIndex].server_budget) > Number(agents[agentIndex].server_period))}
+                  helperText={(Number(agents[agentIndex].server_budget) < 0 ||  (Number(agents[agentIndex].server_budget) > Number(agents[agentIndex].server_period))) ? 'Must be less than period and greater than 0' : undefined}
+                  InputProps={{
+                    inputProps: {
+                      type: 'number',
+                      min: 1,
+                      max: 100,
+                    }
+                  }}
+                />
+                <TextField
+                  id="server_period"
+                  name="server_period"
+                  className={classes.spaced}
+                  label="Period"
+                  placeholder="1"
+                  margin="normal"
+                  fullWidth
+                  onChange={handleChange(agentIndex, 'value')}
+                  value={agents[agentIndex].server_period || ''}
+                  error={error[`Agent ${agentIndex + 1} Message server period`] || Number(agents[agentIndex].server_period) < 0 ||  (Number(agents[agentIndex].server_budget) > Number(agents[agentIndex].server_period))}
+                  helperText={(Number(agents[agentIndex].server_period) < 0 ||  (Number(agents[agentIndex].server_budget) > Number(agents[agentIndex].server_period))) ? 'Must be greater than budget and greater than 0' : undefined}
+                  InputProps={{
+                    inputProps: {
+                      type: 'number',
+                      min: 1,
+                      max: 100,
+                    }
+                  }}
+                />
+              </>
+            }
+
           </FormGroup>
         </Grid>
       </Grid>

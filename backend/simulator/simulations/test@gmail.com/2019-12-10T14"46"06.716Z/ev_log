@@ -1,0 +1,91 @@
+
+Running configuration General, run #0...
+Assigned runID=General-0-20191210-14:46:10-575
+Setting up network "net_0"...
+Initializing...
+Initializing channel net_0.DF.gate$o[0].channel, stage 0
+Initializing channel net_0.ag[0].gate$o[0].channel, stage 0
+Initializing module net_0, stage 0
+Initializing module net_0.DF, stage 0
+Initializing module net_0.ag[0], stage 0
+[INFO]	Connections Table for Ag: 0
+
+Running simulation...
+** Event #1  t=0  0% completed  (0% total)   net_0.ag[0] (agent, id=3)
+[INFO]	SETTING_AG_TASKSET
+** Event #2  t=0  0% completed  (0% total)   net_0.ag[0] (agent, id=3)
+[INFO]	SETTING EDF SCHEDULER
+[INFO]	Release queue:
+[INFO]	- T_id:[0] at t: 0 tskDm: 0 tskDdl: 13 tskCres: 3
+[INFO]	t: 0, ARRIVED tskId:[0] tskDm: 0 tskRt: 0
+[INFO]	Executions left: -1
+[INFO]	Task:[0] is periodic, copied back into the -to-be-released-queue!
+[INFO]	More Task(s) to release in the vector, scheduling next check for arrival
+[INFO]	t: 0, DDL check for task:[0] scheduled at t: 13
+[INFO]	Tasks running: 1
+** Event #3  t=0  0% completed  (0% total)   net_0.ag[0] (agent, id=3)
+[INFO]	Publish services on DF table
+** Event #4  t=0  0% completed  (0% total)   net_0.ag[0] (agent, id=3)
+[INFO]	Generating Ag needs
+** Event #5  t=0  0% completed  (0% total)   net_0.ag[0] (agent, id=3)
+[INFO]	t: 0, ACTIVATED tskId:[0] tskDm: ag[0] tskEx: ag[0] tskRt: 0
+[INFO]	Task:[0], C_Res: 3
+[INFO]	t: 0, scheduled check for completion task:[0] at t: 3
+** Event #6  t=0  0% completed  (0% total)   net_0.ag[0] (agent, id=3)
+[INFO]	Release queue:
+[INFO]	- T_id:[0] at t: 13 tskDm: 0 tskDdl: 13 tskCres: 3
+[INFO]	t: 0, task [0] arrival is scheduled at t: 13
+** Event #7  t=3  10% completed  (10% total)   net_0.ag[0] (agent, id=3)
+[INFO]	t: 3, checking COMPLETION for task [0] tskDm 0
+[INFO]	t: 3, COMPLETED tskId:[0] tskDm: ag[0] tskEx: ag[0] tskRt: 0
+** Event #8  t=13  43% completed  (43% total)   net_0.ag[0] (agent, id=3)
+[INFO]	t: 13, checking DDL_MISS for task:[0]
+[INFO]	Ag_DDL_miss: 0
+** Event #9  t=13  43% completed  (43% total)   net_0.ag[0] (agent, id=3)
+[INFO]	Release queue:
+[INFO]	- T_id:[0] at t: 13 tskDm: 0 tskDdl: 13 tskCres: 3
+[INFO]	t: 13, ARRIVED tskId:[0] tskDm: 0 tskRt: 13
+[INFO]	Executions left: -1
+[INFO]	Task:[0] is periodic, copied back into the -to-be-released-queue!
+[INFO]	More Task(s) to release in the vector, scheduling next check for arrival
+[INFO]	t: 13, DDL check for task:[0] scheduled at t: 26
+[INFO]	Tasks running: 1
+** Event #10  t=13  43% completed  (43% total)   net_0.ag[0] (agent, id=3)
+[INFO]	t: 13, ACTIVATED tskId:[0] tskDm: ag[0] tskEx: ag[0] tskRt: 13
+[INFO]	Task:[0], C_Res: 3
+[INFO]	t: 13, scheduled check for completion task:[0] at t: 16
+** Event #11  t=13  43% completed  (43% total)   net_0.ag[0] (agent, id=3)
+[INFO]	Release queue:
+[INFO]	- T_id:[0] at t: 26 tskDm: 0 tskDdl: 13 tskCres: 3
+[INFO]	t: 13, task [0] arrival is scheduled at t: 26
+** Event #12  t=16  53% completed  (53% total)   net_0.ag[0] (agent, id=3)
+[INFO]	t: 16, checking COMPLETION for task [0] tskDm 0
+[INFO]	t: 16, COMPLETED tskId:[0] tskDm: ag[0] tskEx: ag[0] tskRt: 13
+** Event #13  t=26  86% completed  (86% total)   net_0.ag[0] (agent, id=3)
+[INFO]	t: 26, checking DDL_MISS for task:[0]
+[INFO]	Ag_DDL_miss: 0
+** Event #14  t=26  86% completed  (86% total)   net_0.ag[0] (agent, id=3)
+[INFO]	Release queue:
+[INFO]	- T_id:[0] at t: 26 tskDm: 0 tskDdl: 13 tskCres: 3
+[INFO]	t: 26, ARRIVED tskId:[0] tskDm: 0 tskRt: 26
+[INFO]	Executions left: -1
+[INFO]	Task:[0] is periodic, copied back into the -to-be-released-queue!
+[INFO]	More Task(s) to release in the vector, scheduling next check for arrival
+[INFO]	t: 26, DDL check for task:[0] scheduled at t: 39
+[INFO]	Tasks running: 1
+** Event #15  t=26  86% completed  (86% total)   net_0.ag[0] (agent, id=3)
+[INFO]	t: 26, ACTIVATED tskId:[0] tskDm: ag[0] tskEx: ag[0] tskRt: 26
+[INFO]	Task:[0], C_Res: 3
+[INFO]	t: 26, scheduled check for completion task:[0] at t: 29
+** Event #16  t=26  86% completed  (86% total)   net_0.ag[0] (agent, id=3)
+[INFO]	Release queue:
+[INFO]	- T_id:[0] at t: 39 tskDm: 0 tskDdl: 13 tskCres: 3
+[INFO]	t: 26, task [0] arrival is scheduled at t: 39
+** Event #17  t=29  96% completed  (96% total)   net_0.ag[0] (agent, id=3)
+[INFO]	t: 29, checking COMPLETION for task [0] tskDm 0
+[INFO]	t: 29, COMPLETED tskId:[0] tskDm: ag[0] tskEx: ag[0] tskRt: 26
+** Event #18  t=30  100% completed  (100% total)   
+
+<!> Simulation time limit reached -- at t=30s, event #18
+
+Calling finish() at end of Run #0...

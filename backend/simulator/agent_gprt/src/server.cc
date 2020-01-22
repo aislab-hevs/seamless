@@ -35,7 +35,7 @@ Server::Server(int server_id) :
     this->t_n_exec = -1;
 }
 
-Server::Server(int server_id, double n_bandwidth, double n_budget,
+Server::Server(int server_id, double n_period, double n_budget,
         ServerType n_type) :
         Task() {
     t_id = 0;
@@ -53,9 +53,9 @@ Server::Server(int server_id, double n_bandwidth, double n_budget,
     t_release = -1;
 
     this->type = n_type;
-    this->bandwidth = n_bandwidth;
+    this->bandwidth = n_budget / n_period;
     this->budget = n_budget;
-    this->period = n_budget / n_bandwidth;
+    this->period = n_period; //n_budget / n_bandwidth;
     this->curr_budget = budget;
     this->curr_ddl = period;
     this->delay = 0;

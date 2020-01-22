@@ -43,7 +43,7 @@ function getStepContent(step) {
 }
 
 export default function FormStepper(props) {
-  const { activeStep, setActiveStep, submitData, setIgnored, skippable, openSummary } = props;
+  const { activeStep, setActiveStep, submitData, setIgnored, skippable, nextable ,openSummary } = props;
   const classes = useStyles();
   const [skipped, setSkipped] = React.useState(new Set());
   const steps = getSteps();
@@ -120,7 +120,7 @@ export default function FormStepper(props) {
               All steps completed - you&apos;re finished
             </Typography>
             <Button onClick={handleReset} className={classes.button}>
-              Reset
+              Review
             </Button>
             <Button onClick={openSummary} className={classes.button}>
               Summary
@@ -156,7 +156,7 @@ export default function FormStepper(props) {
                   color="primary"
                   onClick={handleNext}
                   className={classes.button}
-                  disabled={isStepOptional(activeStep) && skippable && activeStep !== 2}
+                  disabled={isStepOptional(activeStep) && !nextable}
                 >
                   {/* {activeStep === steps.length - 1 ? 'Finish' : 'Next'} */}
                   {'Next'}

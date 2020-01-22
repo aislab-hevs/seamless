@@ -5,13 +5,16 @@ import GanttScatterChart from '../../components/charts/GanttScatterChart';
 import MergedUtilChart from '../../components/charts/MergedUtilChart';
 import Typography from '../../components/Typography';
 import Summary from '../../components/Summary';
+import GetAppIcon from '@material-ui/icons/GetApp';
 import {
   Paper,
   Box,
   Grid,
   FormControl,
   Select,
-  MenuItem
+  MenuItem,
+  Button,
+  Tooltip
 } from '@material-ui/core';
 import Loading from '../../components/Loading';
 import { makeStyles } from '@material-ui/styles';
@@ -35,7 +38,14 @@ const useStyles = makeStyles(theme => ({
     '.MuiPaper-root': {
       overflowX: 'auto',
       overflowY: 'hidden',
+    },
+    '.MuiButtonBase-root': {
+      minWidth: '36px'
     }
+  },
+  download: {
+    marginLeft: theme.spacing(2),
+    marginBottom: theme.spacing(0.7),
   }
 }))
 
@@ -54,7 +64,7 @@ function Analysis(props) {
   };
 
   const getTaskList = (agent) => {
-    return [...new Set(reports.global_resp_time[agent].map(entry => entry.taskId))];
+    return reports.global_resp_time[agent] ? [...new Set(reports.global_resp_time[agent].map(entry => entry.taskId))] : [];
   }
 
   const getAgList = () => {
@@ -88,6 +98,34 @@ function Analysis(props) {
     }
   }
 
+  const fetchSimulationFiles = async (user, date, auth) => {
+    if (user && date) {
+      const blob = await api.getSimulationFiles(user, date, auth);
+      // Create an object URL for the blob object
+      const url = URL.createObjectURL(blob);
+      // Create a new anchor element
+      const link = document.createElement('a');
+      // Set the href and download attributes for the anchor element
+      link.href = url;
+      link.download = 'simulation.tar.gz';
+      // document.body.appendChild(link);
+      // Programmatically trigger a click on the anchor element
+      // Useful if you want the download to happen automatically
+      // Without attaching the anchor element to the DOM
+      link.click();
+      // link.parentNode.removeChild(link);
+      // Return the anchor element
+      // Useful if you want a reference to the element
+      // in order to attach it to the DOM or use it in some other way
+      return link;
+    }
+  }
+
+
+  const handleDownload = () => {
+    fetchSimulationFiles(user, run, token);
+  }
+
   const fetchData = async (user, date, auth) => {
     const reports = await fetchReports(user, date, auth);
     const log = await fetchLog(user, date, auth);
@@ -106,16 +144,18 @@ function Analysis(props) {
 
   const getMaxBudget = data => {
     let max = 3; // minimum for readability is 3
-    Object.keys(data).forEach(key => {
-      if (key.includes('S')) {
-        for (let entry of data[key]) {
-          if (entry.budget > max) {
-            max = entry.budget;
-            break;
+    if (data) {
+      Object.keys(data).forEach(key => {
+        if (key.includes('S')) {
+          for (let entry of data[key]) {
+            if (entry.budget > max) {
+              max = entry.budget;
+              break;
+            }
           }
         }
-      }
-    })
+      })
+    }
     return max;
   }
 
@@ -131,6 +171,13 @@ function Analysis(props) {
       <Box pb={4} pt={4}>
         <Typography variant='h4'>
           Summary
+          <span>
+            <Tooltip title='Download' placement='top'>
+              <Button onClick={handleDownload} variant='contained' color="secondary" size='small' className={classes.download}>
+                <GetAppIcon fontSize='small' style={{ width: '20px' }} />
+              </Button>
+            </Tooltip>
+          </span>
         </Typography>
       </Box>
       <Box pb={4}>
@@ -180,36 +227,19 @@ function Analysis(props) {
             </Paper>
           </Box>
         }
-        <Box p={2} className={classes.responsive}>
-          <Paper>
-            <Grid item xs={12} sm={6}>
-              <Box p={2}>
-                <Typography variant="h6" id="agents_dmr">
-                  Deadline Miss Ratio
-              </Typography>
-              </Box>
-              <SimpleBarChart
-                data={reports.global_dmr}
-                colors={constants.colors}
-                field="dmr"
-                width={900}
-                height={300} />
-            </Grid>
-          </Paper>
-        </Box>
-        {reports.global_ddl_miss &&
+        {reports.global_dmr &&
           <Box p={2} className={classes.responsive}>
             <Paper>
               <Grid item xs={12} sm={6}>
                 <Box p={2}>
-                  <Typography variant="h6" id="agents_ddl_miss">
-                    Global Deadline Miss
+                  <Typography variant="h6" id="agents_dmr">
+                    Deadline Miss Ratio
               </Typography>
                 </Box>
                 <SimpleBarChart
-                  data={reports.global_ddl_miss}
+                  data={reports.global_dmr}
                   colors={constants.colors}
-                  field="ddl_miss"
+                  field="dmr"
                   width={900}
                   height={300} />
               </Grid>
@@ -296,29 +326,50 @@ function Analysis(props) {
             </Paper>
           </Box>
         }
-        <Box p={2} className={classes.responsive}>
-          <Paper>
-            <Grid item xs={12} sm={6}>
-              <Box p={2}>
-                <Typography variant="h6" id="agent_resp_time">
-                  Response Time
+        {reports.local_dmr && reports.local_dmr[agentIndex] &&
+          <Box p={2} className={classes.responsive}>
+            <Paper>
+              <Grid item xs={12} sm={6}>
+                <Box p={2}>
+                  <Typography variant="h6" id="agents_ddl_miss">
+                    Local Deadline Miss Ratio
               </Typography>
-              </Box>
-              <SimpleChart
-                dot={true}
-                multiline
-                colors={constants.colors}
-                field='time'
-                width={900}
-                height={300}
-                data={reports.local_resp_time[agentIndex]}
-                ids={getTaskList(agentIndex)} // insert taskset here
-                type="monotone"
-                value='t_' />
-            </Grid>
-          </Paper>
-        </Box>
-        {reports.local_lateness
+                </Box>
+                <SimpleBarChart
+                  // keys={['miss', 'checks']}
+                  data={reports.local_dmr[agentIndex]}
+                  colors={constants.colors}
+                  field='dmr'
+                  width={900}
+                  height={300} />
+              </Grid>
+            </Paper>
+          </Box>}
+        {(reports.local_resp_time && reports.local_resp_time[agentIndex])
+          &&
+          <Box p={2} className={classes.responsive}>
+            <Paper>
+              <Grid item xs={12} sm={6}>
+                <Box p={2}>
+                  <Typography variant="h6" id="agent_resp_time">
+                    Response Time
+              </Typography>
+                </Box>
+                <SimpleChart
+                  dot={true}
+                  multiline
+                  colors={constants.colors}
+                  field='time'
+                  width={900}
+                  height={300}
+                  data={reports.local_resp_time[agentIndex]}
+                  ids={getTaskList(agentIndex)} // insert taskset here
+                  type="monotone"
+                  value='t_' />
+              </Grid>
+            </Paper>
+          </Box>}
+        {(reports.local_lateness && reports.local_lateness[agentIndex]) && reports.local_lateness[agentIndex].length > 0
           && <Box p={2} className={classes.responsive}>
             <Paper>
               <Grid item xs={12} sm={6}>
@@ -340,25 +391,28 @@ function Analysis(props) {
                   value='t_' />
               </Grid>
             </Paper>
-          </Box>}
-        <Box p={2} className={classes.responsive}>
-          <Paper>
-            <Grid item xs={12} sm={6}>
-              <Box p={2}>
-                <Typography variant="h6" id="agent_resp_time">
-                  Taskset execution
+          </Box>
+        }
+        {log[agentIndex] &&
+          <Box p={2} className={classes.responsive}>
+            <Paper>
+              <Grid item xs={12} sm={6}>
+                <Box p={2}>
+                  <Typography variant="h6" id="agent_resp_time">
+                    Taskset execution
               </Typography>
-              </Box>
-              <Box style={{ overflow: 'auto', width: 900, height: 300 }}>
-                <GanttScatterChart
-                  ratio={getMaxBudget(log[agentIndex])}
-                  domain={Number(inputs.config.time)}
-                  colors={constants.colors}
-                  data={log[agentIndex]} />
-              </Box>
-            </Grid>
-          </Paper>
-        </Box>
+                </Box>
+                <Box style={{ overflowX: 'auto', overflowY: 'hidden', width: 900, height: 'inherit' }}>
+                  <GanttScatterChart
+                    ratio={getMaxBudget(log[agentIndex])}
+                    domain={Number(inputs.config.time)}
+                    colors={constants.colors}
+                    data={log[agentIndex]} />
+                </Box>
+              </Grid>
+            </Paper>
+          </Box>
+        }
       </Grid>
     </>
   )

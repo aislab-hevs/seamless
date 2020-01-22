@@ -32,6 +32,7 @@ void write_util_json_report(int agent_id, double time, double utilization, const
 void write_pot_util_json(int agent_id, double time, double u_pot);
 void write_stats_json_report(int agent_id, int ddl_checks, int ddl_miss, string timestamp, string user);
 void write_acceptance_ratio(int agent_id, double ratio, string timestamp, string user);
+void write_ddl_checks(int task_id, int agent_id);
 
 void check_reports_dir(string timestamp, string user);
 
@@ -41,6 +42,7 @@ void save_pot_util_json(string timestamp, string user);
 void save_lateness_json(string timestamp, string user);
 void save_ddl_json(string timestamp, string user);
 void save_resp_per_task_json(string timestamp, string user);
+void save_ddl_checks_json(string timestamp, string user);
 
 #endif /* WRITER_H_ */
 

@@ -29,6 +29,8 @@ simple agent
     bool msg_server_mode;
     double neg_timeout = default(0);
     double quantum = default(3);
+    double server_budget;
+    double server_period;
 //    volatile double delayTime @unit(s);   // delay before sending back message
 
     //statistic-related

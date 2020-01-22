@@ -172,9 +172,9 @@ public:
      Negotiation related
      */
     bool check_cnet(int, bool&, Need*);
-    bool check_rbn(int, ServerHandler*, Need*);
-    bool check_rbn_plus(int, double&, double&, ServerHandler*, Need*);
-    double get_current_util(ServerHandler*);
+    bool check_rbn(int, ServerHandler*, Need*, double msg_util = 0);
+    bool check_rbn_plus(int, double&, double&, ServerHandler*, Need*, double msg_util = 0);
+    double get_current_util(ServerHandler*, double msg_util = 0);
 
 private:
     //RR quantum

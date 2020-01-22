@@ -151,7 +151,8 @@ export default function NeedForm(props) {
               onChange={handleChange(needIndex)}
               disabled={!use_neg}
               value={(needs[needIndex] && needs[needIndex].neededTaskDeadline) || ''}
-              error={error[`Need ${needIndex + 1} Needed Task Deadline`]}
+              error={error[`Need ${needIndex + 1} Needed Task Deadline`] || (needs[needIndex] && (Number(needs[needIndex].neededTaskDeadline) < Number(needs[needIndex].neededTaskRelease)))}
+              helperText={(needs[needIndex] && (Number(needs[needIndex].neededTaskDeadline) < Number(needs[needIndex].neededTaskRelease))) ? 'Must be greater than needed task release time' : undefined}
               InputProps={{
                 inputProps: {
                   type: 'number',

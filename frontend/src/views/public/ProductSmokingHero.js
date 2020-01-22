@@ -33,7 +33,7 @@ function ProductSmokingHero(props) {
 
   return (
     <Container className={classes.root} component="section">
-      <Button className={classes.button}>
+      <Button className={classes.button} onClick={() =>{ window.location.href = `mailto:davide.calvaresi@hevs.ch`}}>
         <Typography variant="h4" component="span">
           Got any questions? Need help?
         </Typography>
