@@ -52,10 +52,6 @@ function Team(props) {
             - Semantic data representation, interoperability and blockchain technologies for health data exchange
            <br />
            <br />
-            Id quis laborum voluptate veniam ipsum aute adipisicing commodo excepteur irure deserunt. Et laborum sint nisi ex consectetur amet ullamco. Id laboris eiusmod ullamco dolore qui et duis ut.
-           Esse sunt consequat reprehenderit nisi tempor eu veniam officia culpa. Ipsum tempor do veniam officia. Enim sint nisi duis ex ad dolore culpa reprehenderit. Ut adipisicing ea ad reprehenderit duis laboris duis ut aute qui consequat labore officia. Excepteur deserunt sunt consequat minim nisi magna dolore incididunt aliqua enim sunt. Fugiat irure laboris veniam ea laboris.
-           <br />
-           <br />
            For those areas, the lab develops solutions in integrating Artificial Intelligence with modern software technologies with a focus on mobile, Web and Semantic Web technologies.
           </Typography>
         </Box>
