@@ -7,6 +7,8 @@ It is worth recalling that agents and MAS are characterized by four pillars oper
 Further studies employed the simulator relized in the SEAMLESS project to study the design and simulation of a MAS distributed over wearable sensors interacting via real-time processed streams of data for rehabilitation purposes [30]
 Finally, SEAMLESS is currently used in the teaching of master courses dedicated to MAS and real-time systems at the *Università Politecnica delle Marche*, and *Sant'Anna School of Advanced Studies*.
 
+#### SEAMLESS Source Code
+https://github.com/aislab-hevs/seamless
 
 #### References
 
